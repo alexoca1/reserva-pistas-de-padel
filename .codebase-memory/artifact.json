@@ -1,0 +1,11 @@
+{
+    "schema_version": 2,
+    "commit": "d8015dbd138fb3810af1da1c1421c5f3a93bfaee",
+    "indexed_at": "2026-08-26T23:57:21Z",
+    "project": "reserva-pistas-de-padel",
+    "nodes": 532,
+    "edges": 1106,
+    "original_size": 2752512,
+    "compressed_size": 321943,
+    "compression_level": 9
+}

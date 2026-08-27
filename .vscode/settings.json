@@ -1,0 +1,10 @@
+{
+  "github.copilot.mcp": {
+    "mcpServers": {
+      "codebase-memory": {
+        "command": "D:\\MCP\\codebase-memory-mcp.exe",
+        "args": []
+      }
+    }
+  }
+}

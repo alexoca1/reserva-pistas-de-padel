@@ -47,14 +47,20 @@ Puertos y base de datos del entorno local:
 
 ## 1) Backend (Spring Boot)
 
-1. Clona o abre el proyecto backend en tu máquina.
-2. Crea la base de datos en MySQL:
+1. Clona o abre el proyecto en tu máquina.
+2. Ve a la carpeta del backend:
+
+```bash
+cd padel-backend
+```
+
+3. Crea la base de datos en MySQL:
 
 ```sql
 CREATE DATABASE padel_reservas CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-3. Configura `application.properties` (o `application.yml`) con tu conexión local:
+4. Configura `application.properties` (o `application.yml`) con tu conexión local:
 
 ```properties
 server.port=8080
@@ -67,13 +73,13 @@ spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 ```
 
-4. Ejecuta la aplicación backend:
+5. Ejecuta la aplicación backend:
 
 ```bash
 mvn spring-boot:run
 ```
 
-5. Verifica que está arriba en:
+6. Verifica que está arriba en:
 
 ```text
 http://localhost:8080
