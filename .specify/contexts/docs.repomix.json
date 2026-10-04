@@ -1,0 +1,21 @@
+{
+  "output": {
+    "filePath": "contexto-docs.xml",
+    "style": "xml",
+    "removeComments": false,
+    "removeEmptyLines": false,
+    "showLineNumbers": false
+  },
+  "include": [
+    "specs/**/*.md",
+    ".specify/**/*.md",
+    "**/AGENTS.md",
+    "**/ARCHITECTURE.md",
+    "README.md"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": []
+  }
+}

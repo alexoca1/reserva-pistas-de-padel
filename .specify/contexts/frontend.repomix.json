@@ -1,0 +1,34 @@
+{
+  "output": {
+    "filePath": "contexto-frontend.xml",
+    "style": "xml",
+    "removeComments": false,
+    "removeEmptyLines": false,
+    "showLineNumbers": false
+  },
+  "include": [
+    "padel-frontend/src/**/*.ts",
+    "padel-frontend/src/**/*.tsx",
+    "padel-frontend/src/**/*.css",
+    "padel-frontend/package.json",
+    "padel-frontend/index.html",
+    "padel-frontend/vite.config.ts",
+    "padel-frontend/tsconfig*.json",
+    "specs/**/*.md",
+    ".specify/memory/constitution.md",
+    "padel-frontend/AGENTS.md",
+    "padel-frontend/ARCHITECTURE.md"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "**/.agents/**",
+      "**/*.png",
+      "**/*.svg",
+      "padel-frontend/archivo.env",
+      "node_modules/**",
+      "dist/**"
+    ]
+  }
+}

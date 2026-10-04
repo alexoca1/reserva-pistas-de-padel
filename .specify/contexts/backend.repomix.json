@@ -1,0 +1,28 @@
+{
+  "output": {
+    "filePath": "contexto-backend.xml",
+    "style": "xml",
+    "removeComments": false,
+    "removeEmptyLines": false,
+    "showLineNumbers": false
+  },
+  "include": [
+    "padel-backend/src/main/java/**/*.java",
+    "padel-backend/src/test/java/**/*.java",
+    "padel-backend/src/main/resources/**/*.properties",
+    "padel-backend/src/main/resources/**/*.sql",
+    "padel-backend/pom.xml",
+    "specs/**/*.md",
+    ".specify/memory/constitution.md",
+    "padel-backend/AGENTS.md"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "**/.github/**",
+      "**/.agents/**",
+      "target/**"
+    ]
+  }
+}

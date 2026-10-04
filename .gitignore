@@ -1,0 +1,72 @@
+# Dependencias
+node_modules/
+
+# Maven / Java
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Frontend build
+dist/
+dist-ssr/
+build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Archivos locales y de entorno
+*.local
+.DS_Store
+.env
+.env*.local
+application-local.properties
+**/application-local.properties
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Eclipse / Spring Tools
+.apt_generated/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/nbdist/
+/.nb-gradle/
+
+# VS Code (Corregido para proteger configuraciones del editor)
+.vscode/
+
+# Visual Studio
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 🔐 Herramientas Locales de Inteligencia Artificial (Añadido)
+.codebase-memory/
+repomix-output.txt
+
+# Repomix outputs
+contexto-frontend.xml
+contexto-backend.xml
+contexto-docs.xml
+padel-contexto.xml
+repomix-output.xml
