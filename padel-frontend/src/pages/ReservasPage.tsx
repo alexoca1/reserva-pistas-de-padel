@@ -128,7 +128,11 @@ export function ReservasPage() {
         pistasService.getAll(),
       ]);
       setDisponibilidad(Array.isArray(dispData) ? dispData : []);
-      setPistas(Array.isArray(pistasData) ? pistasData : []);
+      setPistas(
+        Array.isArray(pistasData)
+          ? [...pistasData].sort((a, b) => (a.numeroPista ?? 0) - (b.numeroPista ?? 0))
+          : []
+      );
 
       if (isAdmin && usuarios.length === 0) {
         const usuariosData = await usuariosService.getAll();

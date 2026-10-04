@@ -5,13 +5,12 @@
   command = "npm run build"
 
 # 1. Regla de proxy inverso hacia el backend en Cloud Run (mismo origen, status 200)
-# IMPORTANTE: Reemplaza https://URL-DEL-BACKEND-EN-CLOUD-RUN.a.run.app con la URL real generada por Cloud Run tras el despliegue.
 [[redirects]]
   from = "/api/*"
-  to = "https://URL-DEL-BACKEND-EN-CLOUD-RUN.a.run.app/:splat"
+  to = "https://padel-backend-1058303442470.europe-west1.run.app/:splat"
   status = 200
   force = true
-  headers = {X-Forwarded-Host = "padelreservas.netlify.app"}
+  headers = {Host = "padel-backend-1058303442470.europe-west1.run.app", X-Forwarded-Host = "padelreservas.netlify.app"}
 
 # 2. Regla de fallback para Single Page Application (SPA / React Router)
 [[redirects]]

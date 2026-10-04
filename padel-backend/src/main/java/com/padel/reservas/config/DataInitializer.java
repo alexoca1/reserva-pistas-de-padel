@@ -14,6 +14,8 @@ public class DataInitializer {
 
     private final UsuarioRepository usuarioRepository;
     private final ConfiguracionClubRepository configuracionClubRepository;
+    private final com.padel.reservas.repositories.PistaRepository pistaRepository;
+    private final com.padel.reservas.repositories.FotoPistaRepository fotoPistaRepository;
     private final PasswordEncoder passwordEncoder;
     private final String adminSeedPassword;
     private final String demoAdminSeedPassword;
@@ -21,12 +23,16 @@ public class DataInitializer {
     public DataInitializer(
             UsuarioRepository usuarioRepository,
             ConfiguracionClubRepository configuracionClubRepository,
+            com.padel.reservas.repositories.PistaRepository pistaRepository,
+            com.padel.reservas.repositories.FotoPistaRepository fotoPistaRepository,
             PasswordEncoder passwordEncoder,
             @Value("${ADMIN_SEED_PASSWORD:admin123}") String adminSeedPassword,
             @Value("${DEMO_ADMIN_SEED_PASSWORD:Demo2026!}") String demoAdminSeedPassword
     ) {
         this.usuarioRepository = usuarioRepository;
         this.configuracionClubRepository = configuracionClubRepository;
+        this.pistaRepository = pistaRepository;
+        this.fotoPistaRepository = fotoPistaRepository;
         this.passwordEncoder = passwordEncoder;
         this.adminSeedPassword = adminSeedPassword;
         this.demoAdminSeedPassword = demoAdminSeedPassword;
@@ -87,6 +93,22 @@ public class DataInitializer {
         if (configuracionClubRepository.count() == 0) {
             configuracionClubRepository.save(new ConfiguracionClub());
             System.out.println("[DataInitializer] ConfiguracionClub creada con valores por defecto");
+        }
+
+        // Sincronizar imagenUrl de pistas con su foto de portada de Cloudinary si existe galería
+        for (com.padel.reservas.entities.Pista pista : pistaRepository.findAll()) {
+            var fotos = fotoPistaRepository.findByPistaIdOrderByOrden(pista.getId());
+            if (!fotos.isEmpty()) {
+                var portada = fotos.stream()
+                        .filter(com.padel.reservas.entities.FotoPista::isEsPortada)
+                        .findFirst()
+                        .orElse(fotos.get(0));
+                if (portada != null && portada.getUrl() != null && !portada.getUrl().equals(pista.getImagenUrl())) {
+                    pista.setImagenUrl(portada.getUrl());
+                    pistaRepository.save(pista);
+                    System.out.println("[DataInitializer] Portada Cloudinary sincronizada para Pista " + pista.getNumeroPista());
+                }
+            }
         }
     }
 }

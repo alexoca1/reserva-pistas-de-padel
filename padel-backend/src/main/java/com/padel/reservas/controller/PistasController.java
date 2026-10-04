@@ -23,7 +23,7 @@ public class PistasController {
 
     @GetMapping("/pistas")
     public ResponseEntity<List<Pista>> findAllPistas() {
-        return ResponseEntity.ok(pistaRepository.findAll());
+        return ResponseEntity.ok(pistaRepository.findAllByOrderByNumeroPistaAsc());
     }
 
     @GetMapping("/pistas/{id}")
@@ -74,7 +74,18 @@ public class PistasController {
             pista.get().setNumeroPista(pistaNueva.getNumeroPista());
             pista.get().setTieneIluminacion(pistaNueva.isTieneIluminacion());
             pista.get().setComentarios(pistaNueva.getComentarios());
-            pista.get().setImagenUrl(pistaNueva.getImagenUrl());
+
+            List<FotoPista> fotos = fotoPistaRepository.findByPistaIdOrderByOrden(id);
+            if (!fotos.isEmpty()) {
+                FotoPista portada = fotos.stream()
+                        .filter(FotoPista::isEsPortada)
+                        .findFirst()
+                        .orElse(fotos.get(0));
+                pista.get().setImagenUrl(portada.getUrl());
+            } else if (pistaNueva.getImagenUrl() != null) {
+                pista.get().setImagenUrl(pistaNueva.getImagenUrl());
+            }
+
             pista.get().setFechaModificacion(pistaNueva.getFechaModificacion());
             pistaRepository.save(pista.get());
             return ResponseEntity.ok(pista.get());

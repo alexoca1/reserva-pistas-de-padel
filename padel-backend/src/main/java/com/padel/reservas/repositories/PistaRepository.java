@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PistaRepository extends JpaRepository<Pista, Long> {
 
+    java.util.List<Pista> findAllByOrderByNumeroPistaAsc();
+
 }

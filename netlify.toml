@@ -1,0 +1,15 @@
+[build]
+  command = "npm --prefix padel-frontend run build"
+  publish = "padel-frontend/dist"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://padel-backend-1058303442470.europe-west1.run.app/:splat"
+  status = 200
+  force = true
+  headers = {Host = "padel-backend-1058303442470.europe-west1.run.app", X-Forwarded-Host = "reserva-pistas-de-padel.netlify.app"}
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

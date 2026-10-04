@@ -74,7 +74,10 @@ export function PistasPage() {
       setLoading(true);
       setError("");
       const data = await pistasService.getAll();
-      setPistas(Array.isArray(data) ? data : []);
+      const lista = Array.isArray(data)
+        ? [...data].sort((a, b) => (a.numeroPista ?? 0) - (b.numeroPista ?? 0))
+        : [];
+      setPistas(lista);
     } catch (e) {
       setError(getErrorMessage(e, "Error al cargar pistas"));
     } finally {
@@ -185,7 +188,13 @@ export function PistasPage() {
       setError("");
       const nuevaFoto = await fotoPistaService.subir(pistaEditando.id, file);
       if (nuevaFoto) {
-        setFotosPistaEditando((prev) => [...prev, nuevaFoto]);
+        setFotosPistaEditando((prev) => {
+          const actualizadas = [...prev, nuevaFoto];
+          if (nuevaFoto.esPortada) {
+            setForm((f) => ({ ...f, imagenUrl: nuevaFoto.url }));
+          }
+          return actualizadas;
+        });
         mostrarToast("Foto subida correctamente");
         await cargarPistas();
       }
@@ -201,9 +210,13 @@ export function PistasPage() {
     if (!pistaEditando?.id) return;
     try {
       await fotoPistaService.setPortada(pistaEditando.id, fotoId);
+      const portadaFoto = fotosPistaEditando.find((f) => f.id === fotoId);
       setFotosPistaEditando((prev) =>
         prev.map((f) => ({ ...f, esPortada: f.id === fotoId }))
       );
+      if (portadaFoto) {
+        setForm((prev) => ({ ...prev, imagenUrl: portadaFoto.url }));
+      }
       mostrarToast("Portada actualizada");
       await cargarPistas();
     } catch (err) {
@@ -215,7 +228,12 @@ export function PistasPage() {
     if (!pistaEditando?.id) return;
     try {
       await fotoPistaService.eliminar(pistaEditando.id, fotoId);
-      setFotosPistaEditando((prev) => prev.filter((f) => f.id !== fotoId));
+      setFotosPistaEditando((prev) => {
+        const restantes = prev.filter((f) => f.id !== fotoId);
+        const nuevaPortada = restantes.find((f) => f.esPortada) || restantes[0];
+        setForm((f) => ({ ...f, imagenUrl: nuevaPortada ? nuevaPortada.url : "" }));
+        return restantes;
+      });
       setFotoAEliminarId(null);
       mostrarToast("Foto eliminada");
       await cargarPistas();
