@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /reservas
+Disallow: /perfil
+Disallow: /admin/
+Sitemap: https://padelreservas.netlify.app/sitemap.xml
