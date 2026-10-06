@@ -29,6 +29,10 @@ lerna-debug.log*
 application-local.properties
 **/application-local.properties
 
+# Respaldos y certificados locales de Aiven
+**/.config/aiven/
+**/padel_reservas*.sql
+
 # IntelliJ IDEA
 .idea/
 *.iws

@@ -1,26 +1,32 @@
 # Stage 1: Build
-FROM eclipse-temurin:21-jdk-alpine AS builder
-WORKDIR /build
+FROM eclipse-temurin:21-jdk AS build
+WORKDIR /app
 
-# Copy Maven wrapper and pom.xml
-COPY .mvn/ .mvn/
-COPY mvnw pom.xml ./
-RUN chmod +x mvnw && ./mvnw dependency:go-offline -B || true
+# Copy Maven wrapper and configuration
+COPY mvnw mvnw.cmd ./
+COPY .mvn .mvn
+COPY pom.xml .
 
-# Copy source code and package
-COPY src/ src/
-RUN ./mvnw clean package -DskipTests
+# 🔑 LA LÍNEA CRUCIAL: Añadir permisos antes de ejecutar mvnw
+RUN chmod +x mvnw
+
+# Descargar dependencias fuera de línea
+RUN ./mvnw -q dependency:go-offline
+
+# Copy source code and package omitting tests
+COPY src src
+RUN ./mvnw clean package -DskipTests -Dmaven.test.skip=true
 
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine AS runner
 WORKDIR /app
 
-# Create non-root user
+# Create non-root user for security
 RUN addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup
 
 # Copy artifact from build stage
-COPY --from=builder --chown=appuser:appgroup /build/target/*.jar app.jar
+COPY --from=build --chown=appuser:appgroup /app/target/*.jar app.jar
 
 USER appuser
 
@@ -30,3 +36,5 @@ ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseSerialGC -XX:TieredStopAtLevel=
 EXPOSE 8081
 
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -Dserver.port=${PORT} -jar app.jar"]
+
+
