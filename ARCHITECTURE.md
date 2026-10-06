@@ -16,7 +16,7 @@
 - ✅ **Mantenimiento Programado**: Limpieza diaria automatizada de refresh tokens expirados (`@Scheduled`).
 - ✅ **Creación, edición y cancelación de reservas**.
 - ✅ **Interfaz responsive** con React 19, TypeScript y Tailwind CSS.
-- ✅ **API REST** desarrollada en Spring Boot 3 / Java 21 y MySQL.
+- ✅ **API REST** desarrollada en Spring Boot 4 / Java 25 y MySQL.
 
 ---
 

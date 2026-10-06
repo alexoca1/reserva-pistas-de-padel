@@ -13,7 +13,7 @@ API REST en Spring Boot para gestionar reservas de pistas de pádel con autentic
 
 ## Tecnologías Usadas
 
-- Java 21 / Spring Boot 3
+- Java 25 / Spring Boot 4
 - Spring Security + OAuth2 Resource Server (JWT)
 - Spring Data JPA / Hibernate
 - MySQL
@@ -354,6 +354,5 @@ Configurado globalmente en `SecurityConfig` para `/**` con:
 - **Preparación del backend para producción (spec 040)**: `Dockerfile` multi-etapa (build con Temurin 21 JDK y runtime ligero con Temurin 21 JRE, usuario no-root `appuser`, JVM flags optimizados para serverless Cloud Run: `-XX:MaxRAMPercentage=75.0 -XX:+UseSerialGC -XX:TieredStopAtLevel=1`), `.dockerignore`, perfil `application-prod.properties` (externalización estricta por env vars, pool HikariCP = 5 para Aiven, SSL, `server.forward-headers-strategy=framework` para resolución de IP real en Rate Limiting tras proxy inverso y `app.cookie.secure=true` en cookies del refresh token).
 
 > **Nota para futuras implementaciones:** Actualizar este archivo al finalizar cada cambio funcional relevante.
-
 
 

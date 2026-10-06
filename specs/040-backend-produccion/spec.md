@@ -11,7 +11,7 @@
 Esta especificación prepara el backend (`padel-backend`) para su empaquetado en contenedor Docker y despliegue en producción serverless (**Google Cloud Run**) conectado a una base de datos MySQL gestionada en la nube (**Aiven**), preservando al 100% el comportamiento y flujo de desarrollo en el entorno local.
 
 Los objetivos clave son:
-1. **Contenedorización optimizada:** Construcción multi-etapa con Java 21, imagen base ligera (Alpine), ejecución con usuario sin privilegios (`appuser`), arranque rápido y adaptación a la variable de entorno `$PORT` inyectada por Cloud Run.
+1. **Contenedorización optimizada:** Construcción multi-etapa con Java 25, imagen base ligera (Alpine), ejecución con usuario sin privilegios (`appuser`), arranque rápido y adaptación a la variable de entorno `$PORT` inyectada por Cloud Run.
 2. **Perfil `prod`:** Externalización estricta de todos los secretos y cadenas de conexión vía variables de entorno, configuración de SSL obligatorio para Aiven y limitación del pool de conexiones HikariCP a 5 conexiones para respetar los límites del tier gratuito de Aiven.
 3. **Resolución de IP real de cliente:** Activación de `server.forward-headers-strategy=framework` para que el filtro de Rate Limiting aplique límites basados en la IP real del cliente detrás del proxy inverso de Cloud Run/Netlify.
 4. **Seguridad de Cookies en Producción:** Activación de la flag `Secure=true` en la emisión de cookies del Refresh Token cuando el perfil activo sea producción.
@@ -31,7 +31,7 @@ Los objetivos clave son:
 
 ### RF-01 — Dockerfile multi-etapa y `.dockerignore` (`padel-backend/`)
 - **Etapa 1 (Build):**
-  - Imagen base `eclipse-temurin:21-jdk-alpine` o similar con Maven wrapper.
+  - Imagen base `eclipse-temurin:25-jdk-alpine` o similar con Maven wrapper.
   - Copia de dependencias y código fuente, ejecución de `./mvnw clean package -DskipTests`.
 - **Etapa 2 (Runtime):**
   - Imagen base `eclipse-temurin:21-jre-alpine`.

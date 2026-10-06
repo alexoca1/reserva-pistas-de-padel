@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM eclipse-temurin:21-jdk AS build
+FROM eclipse-temurin:25-jdk AS build
 WORKDIR /app
 
 # Copy Maven wrapper and configuration
@@ -18,7 +18,7 @@ COPY src src
 RUN ./mvnw clean package -DskipTests -Dmaven.test.skip=true
 
 # Stage 2: Runtime
-FROM eclipse-temurin:21-jre-alpine AS runner
+FROM eclipse-temurin:25-jre-alpine AS runner
 WORKDIR /app
 
 # Create non-root user for security
@@ -36,5 +36,4 @@ ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseSerialGC -XX:TieredStopAtLevel=
 EXPOSE 8081
 
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -Dserver.port=${PORT} -jar app.jar"]
-
 
