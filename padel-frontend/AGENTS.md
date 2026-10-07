@@ -58,6 +58,21 @@ La aplicación se monta en `src/main.tsx` siguiendo este orden:
 - **Resiliencia y Cold Start:**
   - Si una petición de red tarda más de 4 segundos (típico arranque en frío de Cloud Run tras suspensión), se emite automáticamente un aviso no intrusivo vía toast: *"El servidor se está despertando, puede tardar unos segundos"*.
   - En caso de fallos de conexión o respuestas HTTP 5xx del backend, se muestra al usuario el mensaje amigable: *"Demo temporalmente no disponible. Por favor, inténtalo de nuevo en unos minutos."*.
+- **Cabeceras HTTP de Seguridad y CSP (Spec 042):**
+  - Netlify inyecta cabeceras de protección en todas las respuestas estáticas y rutas SPA (`[[headers]] for = "/*"` en `netlify.toml`):
+    - `X-Frame-Options: DENY` (inmunidad contra clickjacking).
+    - `X-Content-Type-Options: nosniff` (prevención de ataques de confusión MIME).
+    - `Referrer-Policy: strict-origin-when-cross-origin` (preserva la privacidad de origen).
+    - `Permissions-Policy: geolocation=(), camera=(), microphone=()` (bloqueo de APIs de dispositivo no solicitadas).
+    - `Content-Security-Policy`: Política estricta basada en inventario real de recursos:
+      - `default-src 'self'`
+      - `script-src 'self'`
+      - `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com` (justificado por estilos inline de `framer-motion`, `Avatar.tsx`, Canvas WebGL de Three.js y CSS de Google Fonts).
+      - `font-src 'self' https://fonts.gstatic.com data:` (fuentes tipográficas Outfit).
+      - `img-src 'self' data: blob: https://res.cloudinary.com` (iconos locales, ruido base64, imágenes de Cloudinary y previsualizaciones `blob:` con `URL.createObjectURL` en avatar y galería).
+      - `connect-src 'self' https://padel-backend-1058303442470.europe-west1.run.app` (proxy inverso local y host público de Cloud Run).
+      - `object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'`.
+  - Coexistencia armónica con la Spec 029 (Backend): El backend emite `default-src 'self'` para respuestas REST en `/api/*`, mientras que Netlify aplica la política completa para la interfaz web, sin duplicidades ni contradicciones.
 
 ## Flujo de Autenticación Seguro (OAuth 2.0 / OWASP)
 

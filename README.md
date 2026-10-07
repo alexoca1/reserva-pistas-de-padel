@@ -289,6 +289,7 @@ La arquitectura de despliegue en la nube está diseñada para alta disponibilida
 - **Backend:** Contenedor Docker multi-etapa ejecutado en **Google Cloud Run** (perfil `prod` activado vía `SPRING_PROFILES_ACTIVE=prod`).
 - **Base de Datos:** MySQL gestionado en **Aiven** con cifrado SSL obligatorio y pool de conexiones HikariCP optimizado (máx. 5 conexiones).
 - **Medios:** Almacenamiento optimizado de imágenes en **Cloudinary**.
+- **Seguridad HTTP:** Cabeceras de protección en profundidad (`Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`) configuradas tanto en `netlify.toml` para la interfaz web como en `SecurityConfig.java` para la API REST.
 
 ### Despliegue del Frontend en Netlify
 
@@ -299,7 +300,7 @@ La arquitectura de despliegue en la nube está diseñada para alta disponibilida
    - **Build command:** `npm run build`
    - **Publish directory:** `padel-frontend/dist`
 4. En `padel-frontend/netlify.toml`, asegúrate de sustituir `https://URL-DEL-BACKEND-EN-CLOUD-RUN.a.run.app` por la URL HTTPS asignada a tu servicio en Cloud Run.
-5. Despliega el sitio. Netlify enrutará automáticamente todas las peticiones a `/api/*` hacia Cloud Run de forma transparente y servirá la SPA con fallback a `index.html`.
+5. Despliega el sitio. Netlify enrutará automáticamente todas las peticiones a `/api/*` hacia Cloud Run de forma transparente, servirá la SPA con fallback a `index.html` e inyectará las cabeceras de seguridad HTTP y CSP.
 
 ### Variables de entorno requeridas en Backend (Cloud Run)
 
