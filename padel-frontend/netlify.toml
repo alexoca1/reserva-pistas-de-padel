@@ -17,3 +17,14 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# 3. Cabeceras HTTP de seguridad para recursos servidos por Netlify
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), camera=(), microphone=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://res.cloudinary.com; connect-src 'self' https://padel-backend-1058303442470.europe-west1.run.app; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+
