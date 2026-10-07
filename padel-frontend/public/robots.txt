@@ -4,4 +4,4 @@ Disallow: /dashboard
 Disallow: /reservas
 Disallow: /perfil
 Disallow: /admin/
-Sitemap: https://padelreservas.netlify.app/sitemap.xml
+Sitemap: https://reserva-pistas-de-padel.netlify.app/sitemap.xml

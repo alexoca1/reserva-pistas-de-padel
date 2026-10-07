@@ -10,7 +10,7 @@
   to = "https://padel-backend-1058303442470.europe-west1.run.app/:splat"
   status = 200
   force = true
-  headers = {Host = "padel-backend-1058303442470.europe-west1.run.app", X-Forwarded-Host = "padelreservas.netlify.app"}
+  headers = {Host = "padel-backend-1058303442470.europe-west1.run.app", X-Forwarded-Host = "reserva-pistas-de-padel.netlify.app"}
 
 # 2. Regla de fallback para Single Page Application (SPA / React Router)
 [[redirects]]

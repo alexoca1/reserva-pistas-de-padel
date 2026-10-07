@@ -280,8 +280,8 @@ La aplicación utiliza un esquema de tokens desacoplados para protegerse de vuln
 ## 🚀 Despliegue en producción
 
 ### 🌐 Demo en vivo
-- **Frontend (Netlify):** `https://padelreservas.netlify.app/` *(o URL personalizada tras despliegue)*
-- **API Backend (Cloud Run):** `https://URL-DEL-BACKEND-EN-CLOUD-RUN.a.run.app`
+- **Frontend (Netlify):** https://reserva-pistas-de-padel.netlify.app/
+- **API Backend (Cloud Run):** `https://padel-backend-1058303442470.europe-west1.run.app`
 
 La arquitectura de despliegue en la nube está diseñada para alta disponibilidad, bajo coste y mínimo consumo de memoria:
 

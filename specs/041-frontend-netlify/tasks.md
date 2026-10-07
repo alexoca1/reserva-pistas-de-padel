@@ -11,5 +11,5 @@
 
 ### Tareas manuales pendientes de usuario tras despliegue
 
-- [ ] Reemplazar `https://URL-DEL-BACKEND-EN-CLOUD-RUN.a.run.app` en `padel-frontend/netlify.toml` por la URL pública real obtenida al desplegar el backend en Google Cloud Run.
-- [ ] Reemplazar `https://padelreservas.netlify.app/` en `sitemap.xml`, `robots.txt`, `index.html` y `README.md` por el nombre de subdominio definitivo en Netlify.
+- [x] Reemplazar `https://URL-DEL-BACKEND-EN-CLOUD-RUN.a.run.app` en `padel-frontend/netlify.toml` por la URL pública real obtenida al desplegar el backend en Google Cloud Run.
+- [x] Reemplazar `https://padelreservas.netlify.app/` en `sitemap.xml`, `robots.txt`, `index.html` y `README.md` por el nombre de subdominio definitivo en Netlify.
