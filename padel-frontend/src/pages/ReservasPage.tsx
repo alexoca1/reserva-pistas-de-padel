@@ -168,6 +168,11 @@ export function ReservasPage() {
     if (f.horaFin > HORA_CIERRE) return "La reserva no puede terminar después de las 23:00.";
     if (f.horaInicio >= f.horaFin) return "La hora de fin debe ser posterior a la de inicio.";
 
+    const pistaSeleccionadaObj = pistas.find((p) => String(p.id) === f.pistaId);
+    if (pistaSeleccionadaObj?.estado === "MANTENIMIENTO") {
+      return "La pista seleccionada está en mantenimiento y no admite reservas.";
+    }
+
     const hoy = obtenerFechaHoyLocal();
     const fechaSeleccionada = parseFechaLocal(f.fechaReserva);
     if (!fechaSeleccionada) return "La fecha no es válida.";
@@ -656,12 +661,34 @@ export function ReservasPage() {
                 required
               >
                 <option value="">Selecciona una pista</option>
-                {pistas.map((pista) => (
-                  <option key={pista.id} value={pista.id}>
-                    Pista {pista.numeroPista}
-                  </option>
-                ))}
+                {pistas.map((pista) => {
+                  const enMantenimiento = pista.estado === "MANTENIMIENTO";
+                  const precioTxt = pista.precioHora != null ? ` (${Number(pista.precioHora).toFixed(2)} €/h)` : "";
+                  return (
+                    <option
+                      key={pista.id}
+                      value={pista.id}
+                      disabled={enMantenimiento && String(pista.id) !== form.pistaId}
+                    >
+                      Pista {pista.numeroPista} {enMantenimiento ? "(En mantenimiento)" : precioTxt}
+                    </option>
+                  );
+                })}
               </Select>
+            </div>
+
+            {/* Coste estimado en tiempo real */}
+            <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 flex items-center justify-between text-sm">
+              <span className="text-muted-foreground font-medium">Coste estimado:</span>
+              <span className="font-semibold text-foreground">
+                {(() => {
+                  const pistaSel = pistas.find((p) => String(p.id) === form.pistaId);
+                  if (!pistaSel) return "—";
+                  if (pistaSel.precioHora == null) return "Consultar en recepción";
+                  const coste = (Number(pistaSel.precioHora) * duracionMinutos) / 60;
+                  return `${coste.toFixed(2)} € (${Number(pistaSel.precioHora).toFixed(2)} €/h · ${duracionMinutos} min)`;
+                })()}
+              </span>
             </div>
 
             <DialogFooter>

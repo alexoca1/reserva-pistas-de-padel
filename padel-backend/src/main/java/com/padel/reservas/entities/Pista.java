@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -27,6 +28,13 @@ public class Pista {
     private boolean tieneIluminacion;
     private String comentarios;
     private String imagenUrl;
+
+    @Column(precision = 10, scale = 2, columnDefinition = "DECIMAL(10,2) DEFAULT 20.00")
+    private BigDecimal precioHora = new BigDecimal("20.00");
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'ACTIVA'")
+    private EstadoPista estado = EstadoPista.ACTIVA;
 
     @CreationTimestamp
     @Column(updatable = false)

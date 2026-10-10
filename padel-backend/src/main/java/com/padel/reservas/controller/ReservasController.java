@@ -76,7 +76,13 @@ public class ReservasController {
                                     r.getUsuario().getId()
                             ))
                             .toList();
-                    return new DisponibilidadDiaDTO(pista.getId(), pista.getNumeroPista(), franjas);
+                    return new DisponibilidadDiaDTO(
+                            pista.getId(),
+                            pista.getNumeroPista(),
+                            franjas,
+                            pista.getPrecioHora(),
+                            pista.getEstado() != null ? pista.getEstado().name() : "ACTIVA"
+                    );
                 })
                 .toList();
 

@@ -22,12 +22,16 @@ export interface PerfilPayload {
   usuarioId?: number;
 }
 
+export type EstadoPista = "ACTIVA" | "MANTENIMIENTO";
+
 export interface Pista {
   id: number;
   numeroPista: number;
   tieneIluminacion: boolean;
   comentarios?: string | null;
   imagenUrl?: string | null;
+  precioHora?: number | null;
+  estado?: EstadoPista;
   fechaAlta?: string;
   fechaModificacion?: string;
 }
@@ -36,6 +40,8 @@ export interface PistaPayload {
   numeroPista: number;
   tieneIluminacion: boolean;
   comentarios: string;
+  precioHora?: number;
+  estado?: EstadoPista;
 }
 
 export interface Reserva {
@@ -49,6 +55,7 @@ export interface Reserva {
   estado?: string;
   fechaCancelacion?: string;
   codigoReserva?: string;
+  costeEstimado?: number | null;
   pista?: Pista;
   pistaId?: number;
   numeroPista?: number;
@@ -92,6 +99,8 @@ export interface DisponibilidadDia {
   pistaId: number;
   numeroPista: number;
   franjas: FranjaOcupada[];
+  precioHora?: number | null;
+  estado?: string;
 }
 
 export interface ConfiguracionDuraciones {

@@ -2,11 +2,13 @@ package com.padel.reservas.services;
 
 import com.padel.reservas.dto.CreateReservaDTO;
 import com.padel.reservas.entities.ConfiguracionClub;
+import com.padel.reservas.entities.EstadoPista;
 import com.padel.reservas.entities.EstadoReserva;
 import com.padel.reservas.entities.FranjaReservada;
 import com.padel.reservas.entities.Pista;
 import com.padel.reservas.entities.Reserva;
 import com.padel.reservas.entities.Usuario;
+import com.padel.reservas.exception.PistaEnMantenimientoException;
 import com.padel.reservas.exception.ReservaSolapadaException;
 import com.padel.reservas.repositories.ReservaRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ public class ReservaService {
     /** Crea una reserva y sus franjas atómicas en una única transacción. */
     @Transactional
     public Reserva crear(CreateReservaDTO dto, Pista pista, Usuario titular) {
+        validarEstadoPista(pista);
         LocalTime inicio = LocalTime.parse(dto.horaInicio());
         LocalTime fin = LocalTime.parse(dto.horaFin());
 
@@ -65,6 +68,7 @@ public class ReservaService {
     /** Actualiza una reserva existente, liberando sus franjas antiguas y reclamando las nuevas. */
     @Transactional
     public Reserva actualizar(Reserva reserva, CreateReservaDTO dto, Pista pista) {
+        validarEstadoPista(pista);
         LocalTime inicio = LocalTime.parse(dto.horaInicio());
         LocalTime fin = LocalTime.parse(dto.horaFin());
 
@@ -81,6 +85,12 @@ public class ReservaService {
         reserva.getFranjas().clear(); // orphanRemoval marca las antiguas para borrado
         aplicarFranjas(reserva, pista);
         return guardarConTraduccionDeConflicto(reserva);
+    }
+
+    private void validarEstadoPista(Pista pista) {
+        if (pista != null && pista.getEstado() == EstadoPista.MANTENIMIENTO) {
+            throw new PistaEnMantenimientoException("La pista se encuentra actualmente en mantenimiento y no admite reservas");
+        }
     }
 
     private void validarDuracionYHorario(LocalTime inicio, LocalTime fin) {

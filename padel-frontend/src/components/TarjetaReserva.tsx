@@ -32,9 +32,16 @@ export function TarjetaReserva({ reserva, onEditar, onEliminar }: TarjetaReserva
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-0">
-        <p className="text-sm text-muted-foreground">
-          {reserva.horaInicio} – {reserva.horaFin}
-        </p>
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            {reserva.horaInicio} – {reserva.horaFin}
+          </span>
+          {reserva.costeEstimado != null ? (
+            <span className="font-semibold text-foreground">
+              {Number(reserva.costeEstimado).toFixed(2)} €
+            </span>
+          ) : null}
+        </div>
         <div className="flex items-center gap-2 pt-2">
           <Button
             variant="secondary"

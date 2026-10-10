@@ -9,7 +9,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,4 +74,23 @@ public class Reserva {
 
     @OneToMany(mappedBy = "reserva", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FranjaReservada> franjas = new ArrayList<>();
+
+    @Transient
+    public BigDecimal getCosteEstimado() {
+        if (pista == null || pista.getPrecioHora() == null || horaInicio == null || horaFin == null) {
+            return null;
+        }
+        long minutos = Duration.between(horaInicio, horaFin).toMinutes();
+        return pista.getPrecioHora()
+                .multiply(BigDecimal.valueOf(minutos))
+                .divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
+    }
+
+    public boolean esJugada(LocalDateTime ahora) {
+        if (this.estado != EstadoReserva.CONFIRMADA || this.fechaReserva == null || this.horaFin == null) {
+            return false;
+        }
+        LocalDateTime finPartido = LocalDateTime.of(this.fechaReserva, this.horaFin);
+        return finPartido.isBefore(ahora);
+    }
 }

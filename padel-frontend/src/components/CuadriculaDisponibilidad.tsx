@@ -54,6 +54,10 @@ export function CuadriculaDisponibilidad({
         <div className="flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/20 px-2.5 py-1 font-medium text-primary shadow-[0_0_12px_hsl(var(--primary)/0.15)]">
           <span>Tu reserva</span>
         </div>
+        <div className="flex items-center gap-1.5 rounded-md border border-destructive/40 bg-destructive/15 px-2.5 py-1 font-medium text-destructive">
+          <IconLock className="h-3 w-3" />
+          <span>Mantenimiento</span>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -63,14 +67,28 @@ export function CuadriculaDisponibilidad({
               <th className="w-24 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Hora
               </th>
-              {pistasAMostrar.map((pista) => (
-                <th
-                  key={pista.pistaId}
-                  className="min-w-[140px] px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-foreground"
-                >
-                  Pista {pista.numeroPista}
-                </th>
-              ))}
+              {pistasAMostrar.map((pista) => {
+                const enMantenimiento = pista.estado === "MANTENIMIENTO";
+                return (
+                  <th
+                    key={pista.pistaId}
+                    className={`min-w-[140px] px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider ${
+                      enMantenimiento ? "text-destructive/90 bg-destructive/[0.04]" : "text-foreground"
+                    }`}
+                  >
+                    <div>Pista {pista.numeroPista}</div>
+                    {enMantenimiento ? (
+                      <span className="inline-block mt-0.5 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-normal bg-destructive/20 text-destructive border border-destructive/30">
+                        Mantenimiento
+                      </span>
+                    ) : pista.precioHora != null ? (
+                      <span className="text-[10px] font-normal text-primary lowercase tracking-normal">
+                        {Number(pista.precioHora).toFixed(2)} €/h
+                      </span>
+                    ) : null}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
@@ -80,11 +98,25 @@ export function CuadriculaDisponibilidad({
                   {inicio}
                 </td>
                 {pistasAMostrar.map((pista) => {
+                  const enMantenimiento = pista.estado === "MANTENIMIENTO";
                   const franja = pista.franjas.find(
                     (f) => f.horaInicio <= inicio && f.horaFin > inicio
                   );
 
                   if (!franja) {
+                    if (enMantenimiento) {
+                      return (
+                        <td key={pista.pistaId} className="p-1.5 text-center bg-destructive/[0.02]">
+                          <div
+                            className="flex h-10 w-full cursor-not-allowed items-center justify-center rounded-md border border-white/5 bg-white/[0.02] text-xs font-medium text-muted-foreground/40"
+                            title="Pista en mantenimiento — No admite reservas"
+                          >
+                            <span>Mantenimiento</span>
+                          </div>
+                        </td>
+                      );
+                    }
+
                     return (
                       <td key={pista.pistaId} className="p-1.5 text-center">
                         <button

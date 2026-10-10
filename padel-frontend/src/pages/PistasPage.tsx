@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { pistasService, fotoPistaService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
-import type { Pista, FotoPista } from "../types";
+import type { Pista, FotoPista, EstadoPista } from "../types";
 import { getErrorMessage } from "../types";
 import {
   Table,
@@ -34,6 +34,8 @@ interface PistaForm {
   tieneIluminacion: boolean;
   comentarios: string;
   imagenUrl: string;
+  precioHora: string;
+  estado: EstadoPista;
 }
 
 const initialForm: PistaForm = {
@@ -41,6 +43,8 @@ const initialForm: PistaForm = {
   tieneIluminacion: false,
   comentarios: "",
   imagenUrl: "",
+  precioHora: "20.00",
+  estado: "ACTIVA",
 };
 
 export function PistasPage() {
@@ -124,6 +128,8 @@ export function PistasPage() {
       tieneIluminacion: Boolean(pista.tieneIluminacion),
       comentarios: pista.comentarios || "",
       imagenUrl: pista.imagenUrl || "",
+      precioHora: pista.precioHora != null ? String(pista.precioHora) : "20.00",
+      estado: pista.estado || "ACTIVA",
     });
     setFotoAEliminarId(null);
     setOpenFormDialog(true);
@@ -267,6 +273,8 @@ export function PistasPage() {
         tieneIluminacion: form.tieneIluminacion,
         comentarios: form.comentarios,
         imagenUrl: form.imagenUrl,
+        precioHora: Number(form.precioHora) || 20.0,
+        estado: form.estado,
       };
 
       if (pistaEditando?.id) {
@@ -389,13 +397,23 @@ export function PistasPage() {
                       onClick={() => void abrirLightbox(pista)}
                     />
                   ) : null}
-                  <p className="font-medium text-foreground">
-                    Pista {pista.numeroPista}
-                  </p>
+                  <div>
+                    <p className="font-medium text-foreground">
+                      Pista {pista.numeroPista}
+                    </p>
+                    <p className="text-xs font-semibold text-primary">
+                      {Number(pista.precioHora ?? 20).toFixed(2)} €/h
+                    </p>
+                  </div>
                 </div>
-                <Badge variant={pista.tieneIluminacion ? "success" : "danger"}>
-                  {pista.tieneIluminacion ? "Sí" : "No"}
-                </Badge>
+                <div className="flex flex-col items-end gap-1">
+                  <Badge variant={pista.estado === "MANTENIMIENTO" ? "danger" : "success"}>
+                    {pista.estado === "MANTENIMIENTO" ? "Mantenimiento" : "Activa"}
+                  </Badge>
+                  <Badge variant={pista.tieneIluminacion ? "success" : "danger"}>
+                    {pista.tieneIluminacion ? "Luz: Sí" : "Luz: No"}
+                  </Badge>
+                </div>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
                 {pista.comentarios || "Sin comentarios"}
@@ -432,6 +450,8 @@ export function PistasPage() {
                   <Button
                     variant="secondary"
                     className="w-full"
+                    disabled={pista.estado === "MANTENIMIENTO"}
+                    title={pista.estado === "MANTENIMIENTO" ? "Pista actualmente en mantenimiento" : undefined}
                     onClick={() =>
                       navigate(
                         isAuthenticated ? "/reservas" : "/login",
@@ -439,7 +459,7 @@ export function PistasPage() {
                       )
                     }
                   >
-                    Reservar
+                    {pista.estado === "MANTENIMIENTO" ? "En mantenimiento" : "Reservar"}
                   </Button>
                 </div>
               )}
@@ -459,6 +479,8 @@ export function PistasPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Número de pista</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Precio / hora</TableHead>
                 <TableHead>Iluminación</TableHead>
                 <TableHead>Comentarios</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
@@ -479,6 +501,14 @@ export function PistasPage() {
                       ) : null}
                       <span>Pista {pista.numeroPista}</span>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={pista.estado === "MANTENIMIENTO" ? "danger" : "success"}>
+                      {pista.estado === "MANTENIMIENTO" ? "Mantenimiento" : "Activa"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-semibold text-primary">
+                    {Number(pista.precioHora ?? 20).toFixed(2)} €/h
                   </TableCell>
                   <TableCell>
                     <Badge variant={pista.tieneIluminacion ? "success" : "danger"}>
@@ -515,6 +545,8 @@ export function PistasPage() {
                     ) : (
                       <Button
                         variant="secondary"
+                        disabled={pista.estado === "MANTENIMIENTO"}
+                        title={pista.estado === "MANTENIMIENTO" ? "Pista actualmente en mantenimiento" : undefined}
                         onClick={() =>
                           navigate(
                             isAuthenticated ? "/reservas" : "/login",
@@ -522,7 +554,7 @@ export function PistasPage() {
                           )
                         }
                       >
-                        Reservar
+                        {pista.estado === "MANTENIMIENTO" ? "En mantenimiento" : "Reservar"}
                       </Button>
                     )}
                   </TableCell>
@@ -567,6 +599,45 @@ export function PistasPage() {
               />
             </div>
 
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="precioHora">Precio por hora (€)</Label>
+                <Input
+                  id="precioHora"
+                  name="precioHora"
+                  type="number"
+                  min="0"
+                  step="0.50"
+                  value={form.precioHora}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="estado">Estado operativo</Label>
+                <select
+                  id="estado"
+                  name="estado"
+                  value={form.estado}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      estado: e.target.value as EstadoPista,
+                    }))
+                  }
+                  className="rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="ACTIVA" className="bg-card text-foreground">
+                    Activa
+                  </option>
+                  <option value="MANTENIMIENTO" className="bg-card text-foreground">
+                    Mantenimiento
+                  </option>
+                </select>
+              </div>
+            </div>
 
             <div className="flex items-center gap-3 rounded-md border border-white/10 bg-white/5 px-3 py-2">
               <input
