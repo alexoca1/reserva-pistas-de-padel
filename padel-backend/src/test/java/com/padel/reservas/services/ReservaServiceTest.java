@@ -173,4 +173,33 @@ class ReservaServiceTest {
         assertEquals(LocalTime.of(10, 0), resultado.getHoraInicio());
         assertEquals(LocalTime.of(11, 30), resultado.getHoraFin());
     }
+
+    @Test
+    void crear_pistaEnMantenimiento_lanzaPistaEnMantenimientoException() {
+        Pista pistaMantenimiento = new Pista();
+        pistaMantenimiento.setId(2L);
+        pistaMantenimiento.setEstado(com.padel.reservas.entities.EstadoPista.MANTENIMIENTO);
+
+        CreateReservaDTO dto = new CreateReservaDTO(
+                LocalDate.of(2026, 12, 1), "10:00", "11:30", "Ana", "600111222", 2L, null);
+
+        assertThrows(com.padel.reservas.exception.PistaEnMantenimientoException.class,
+                () -> reservaService.crear(dto, pistaMantenimiento, new Usuario()));
+    }
+
+    @Test
+    void actualizar_pistaEnMantenimiento_lanzaPistaEnMantenimientoException() {
+        Pista pistaMantenimiento = new Pista();
+        pistaMantenimiento.setId(2L);
+        pistaMantenimiento.setEstado(com.padel.reservas.entities.EstadoPista.MANTENIMIENTO);
+
+        Reserva reservaExistente = new Reserva();
+        reservaExistente.setId(1L);
+
+        CreateReservaDTO dto = new CreateReservaDTO(
+                LocalDate.of(2026, 12, 1), "10:00", "11:30", "Ana", "600111222", 2L, null);
+
+        assertThrows(com.padel.reservas.exception.PistaEnMantenimientoException.class,
+                () -> reservaService.actualizar(reservaExistente, dto, pistaMantenimiento));
+    }
 }

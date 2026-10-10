@@ -49,6 +49,9 @@ class PistasControllerSecurityTest {
     @MockitoBean
     private CloudinaryService cloudinaryService;
 
+    @MockitoBean
+    private com.padel.reservas.repositories.ReservaRepository reservaRepository;
+
     @Test
     void getPistas_unauthenticated_returns200() throws Exception {
         when(pistaRepository.findAll()).thenReturn(List.of());
