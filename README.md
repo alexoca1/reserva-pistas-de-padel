@@ -34,7 +34,8 @@ Para evaluar la aplicación y explorar el panel de administración sin riesgo de
 | Rol | Email | Contraseña | Permisos |
 | --- | --- | --- | --- |
 | **Demo Admin** | `demo@padelreservas.es` | `Demo2026!` | Exploración completa del panel de administración, creación/edición de reservas y subida de imágenes. Operaciones destructivas y reconfiguración protegidas por Spring AOP (`@NoDemoAdmin`). |
-| **Usuario Estándar** | `prueba1@gmail.com` | `1234567` | Gestión de reservas propias y perfil. |
+
+> Cualquier persona puede crear su propia cuenta desde la aplicación en la pantalla de registro.
 
 > 🔒 **Protección en Backend:** El usuario `DEMO_ADMIN` cuenta con salvaguardas mediante Programación Orientada a Aspectos (Spring AOP) en el backend. Las peticiones a operaciones restringidas (borrado de pistas, borrado de reservas, reconfiguración del club) responden con HTTP `403 Forbidden` (`"Acción no disponible en modo demostración."`).
 
@@ -49,7 +50,7 @@ Para evaluar la aplicación y explorar el panel de administración sin riesgo de
 
 ## Requisitos previos
 
-- Java 17 o superior
+- Java 25 (versión del proyecto)
 - Maven 3.9 o superior
 - MySQL 8+
 - Node.js 18+ (recomendado 20 LTS)
@@ -185,6 +186,8 @@ padel-frontend/
 │   │   │   └── table.tsx
 │   │   ├── Avatar.tsx
 │   │   ├── BuscadorJugador.tsx
+│   │   ├── CookieBanner.tsx
+│   │   ├── DemoBanner.tsx
 │   │   ├── CuadriculaDisponibilidad.tsx
 │   │   ├── GaleriaSedeAdmin.tsx
 │   │   ├── HeroScene.tsx
@@ -209,6 +212,8 @@ padel-frontend/
 │   │   ├── LoginPage.tsx
 │   │   ├── NotFoundPage.tsx
 │   │   ├── PerfilPage.tsx
+│   │   ├── PrivacidadPage.tsx
+│   │   ├── TerminosPage.tsx
 │   │   ├── PistasPage.tsx
 │   │   ├── RegisterPage.tsx
 │   │   └── ReservasPage.tsx
@@ -243,6 +248,7 @@ padel-frontend/
 | `GET`    | `/pistas/:id`                             | **No**                   | No                    | Detalle de pista |
 | `POST`   | `/pistas`                                 | Sí                       | Sí                    | Creación de pista |
 | `PUT`    | `/pistas/:id`                             | Sí                       | Sí                    | Edición de pista |
+| `GET`    | `/pistas/:id/reservas-futuras-count`      | Sí                       | Sí                    | Número de reservas futuras activas sobre una pista |
 | `DELETE` | `/pistas/:id`                             | Sí                       | Sí                    | Eliminación en cascada y borrado RGPD |
 | `GET`    | `/pistas/:pistaId/fotos`                  | **No**                   | No                    | Listado público de fotos de la pista |
 | `POST`   | `/pistas/:pistaId/fotos`                  | Sí                       | Sí                    | Subida de foto a pista (máx 5) |
@@ -316,6 +322,7 @@ La arquitectura de despliegue en la nube está diseñada para alta disponibilida
 | `CLOUDINARY_API_SECRET` | Secreto de API Cloudinary | *(secreto en Cloud Secret Manager)* |
 | `ADMIN_SEED_PASSWORD` | Contraseña del admin principal al primer arranque | *(secreto)* |
 | `PORT` | Puerto HTTP (inyectado por Cloud Run) | `8081` |
+| `APP_SEED_DEMO` | Activa el seeder de datos ficticios al arrancar | `false` (omitir en producción) |
 
 ### Construcción del Contenedor Docker
 
