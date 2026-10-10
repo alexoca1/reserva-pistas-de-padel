@@ -207,13 +207,12 @@ Las páginas que consultan datos deben:
 - Mostrar un mensaje de error si falla la petición.
 - Restaurar el estado de carga en un bloque `finally`.
 
-`PistasPage` carga las pistas mediante `pistasService.getAll()`. Incluye soporte para visualizar y gestionar el campo `imagenUrl` de cada pista, así como un modal de vista ampliada en tamaño real al hacer clic en la miniatura de la pista (mostrando como título `"Pista X"`).
+`PistasPage` carga las pistas mediante `pistasService.getAll()`. Incluye soporte para visualizar y gestionar el campo `imagenUrl` de cada pista, modal de vista ampliada en tamaño real, y gestión de `precioHora` (numérico en €/h) y `estado` (`ACTIVA` / `MANTENIMIENTO`). En el catálogo muestra badges de estado y desactiva la reserva de pistas en mantenimiento.
 
-`ReservasPage` carga reservas y pistas en paralelo mediante:
-
-```ts
-Promise.all([reservasService.getAll(), pistasService.getAll()]);
-```
+`ReservasPage` y `CuadriculaDisponibilidad` gestionan la disponibilidad por día (`DisponibilidadDia` con `precioHora` y `estado`):
+- Pistas en `MANTENIMIENTO`: cabecera con badge distintivo, slots deshabilitados (`cursor-not-allowed`) e interactividad bloqueada.
+- Formulario modal: selector de pista deshabilita las opciones en mantenimiento e informa en tiempo real del coste estimado (`precioHora * duracion / 60` en euros).
+- `TarjetaReserva` (Dashboard): muestra el coste estimado formateado si está disponible.
 
 ## Registro de Cambios Relevantes
 

@@ -338,6 +338,35 @@ docker run -p 8081:8081 \
 
 ---
 
+## 🌱 Seed de Datos de Demostración
+
+El backend incorpora un generador determinista (`DemoDataPlanGenerator` / `DemoDataSeeder`) para poblar la base de datos con un historial verosímil de partidos y reservas (base para analítica, KPIs y pruebas de carga):
+
+- **Activación condicional:** Desactivado por defecto. Se activa configurando `app.seed.demo=true` en `application.properties` o mediante la variable de entorno `APP_SEED_DEMO=true`.
+- **Idempotencia:** Verifica previamente si existen usuarios con el dominio `@seed.invalid`. Si ya existen, omite la siembra para no duplicar datos.
+- **Datos generados:**
+  - 40-45 usuarios ficticios con nombres en español y correos seguros RFC 6761 (`@seed.invalid`).
+  - 800-1.500 reservas repartidas en una ventana de 75 días pasados y 7 días futuros.
+  - Distribución de demanda realista: mayor concentración en horas pico (18:00 a 22:00) y fines de semana.
+  - Respeto estricto a las duraciones configuradas (60, 90 y 120 minutos) y ausencia total de solapamientos de franjas atómicas por pista.
+  - Mayoría de reservas `CONFIRMADA` (~93%) y un porcentaje con estado `CANCELADA` (~7%).
+- **Limpieza de datos sembrados:**
+  ```sql
+  DELETE FROM reservas WHERE usuario_id IN (SELECT id FROM usuario WHERE email LIKE '%@seed.invalid');
+  DELETE FROM usuario WHERE email LIKE '%@seed.invalid';
+  ```
+
+---
+
+## 📋 Mejoras Pendientes (Roadmap)
+
+1. **Migraciones de Esquema Versionadas (Flyway / Liquibase):**
+   - Transicionar de `spring.jpa.hibernate.ddl-auto=update` a una herramienta de migraciones formal con scripts SQL versionados (`V1__...`, `V2__...`), facilitando auditoría de cambios DDL y despliegues reproducibles.
+2. **Gestión de Tareas Periódicas Serverless (Cloud Scheduler):**
+   - El backend se ejecuta como contenedor serverless en Google Cloud Run configurado con `min-instances=0`. Para garantizar la ejecución fiable de tareas de mantenimiento (como la purga de tokens o transiciones de estado) sin depender del ciclo de vida del contenedor, se plantea orquestar llamadas periódicas autenticadas mediante **Google Cloud Scheduler**.
+
+---
+
 ## Propiedad intelectual
 
 **Autor:** Alexander Ocampo Hernandez  

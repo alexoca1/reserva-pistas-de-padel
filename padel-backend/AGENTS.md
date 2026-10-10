@@ -53,6 +53,7 @@ src/main/java/com/padel/reservas/
 |- entities/
 |  |- Usuario.java
 |  |- Pista.java
+|  |- EstadoPista.java
 |  |- Reserva.java
 |  |- RefreshToken.java
 |  |- FranjaReservada.java
@@ -77,9 +78,13 @@ src/main/java/com/padel/reservas/
 |  |- ConfiguracionClubService.java
 |  |- CloudinaryService.java
 |  |- SecurityAuditService.java
+|- seed/
+|  |- DemoDataPlanGenerator.java
+|  |- DemoDataSeeder.java
 |- exception/
    |- GlobalExceptionHandler.java
    |- ReservaSolapadaException.java
+   |- PistaEnMantenimientoException.java
 ```
 
 ## Entidades y Campos Reales
@@ -88,6 +93,8 @@ src/main/java/com/padel/reservas/
 
 - `id: Long`
 - `numeroPista: Integer`
+- `precioHora: BigDecimal` (nullable, valor por defecto 20.00 en BD)
+- `estado: EstadoPista` (enum `ACTIVA`, `MANTENIMIENTO`, por defecto `ACTIVA`)
 - `tieneIluminacion: boolean`
 - `comentarios: String`
 - `imagenUrl: String`
@@ -109,6 +116,8 @@ src/main/java/com/padel/reservas/
 - `pista: Pista` (`@ManyToOne`, `pista_id`, `NOT NULL`)
 - `usuario: Usuario` (`@ManyToOne`, `usuario_id`, `NOT NULL`)
 - `franjas: List<FranjaReservada>` (`@OneToMany(mappedBy = "reserva", cascade = CascadeType.ALL, orphanRemoval = true)`)
+- `costeEstimado: BigDecimal` (`@Transient`, calculado `precioHora * minutos / 60`, `null` si no hay precio)
+- Regla unificada `esJugada(LocalDateTime ahora)`: booleano que determina si un partido se ha disputado (`CONFIRMADA` y fin anterior a `ahora`)
 
 ### `FranjaReservada`
 
@@ -233,6 +242,7 @@ El backend usa `UpdateConfiguracionDTO` para `PUT /admin/configuracion`:
 | POST   | `/pistas`      | **Sí**                 | **Sí**              | Crea una pista (Solo Administrador)      |
 | PUT    | `/pistas/{id}` | **Sí**                 | **Sí**              | Actualiza una pista (Solo Administrador) |
 | DELETE | `/pistas/{id}` | **Sí**                 | **Sí**              | Elimina una pista (Solo Administrador)   |
+| GET    | `/pistas/{id}/reservas-futuras-count` | **Sí** | **Sí** | Cuenta reservas activas futuras en la pista |
 
 ### 3) Reservas (`/reservas`)
 
@@ -352,6 +362,7 @@ Configurado globalmente en `SecurityConfig` para `/**` con:
 - **Validación robusta de contraseña en registro (spec 039)**: En `RegisterRequest.java`, restricción de complejidad mediante `@Size(min = 8, max = 100)` y `@Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$")` (mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número). Errores mapeados a HTTP 400 por `GlobalExceptionHandler`.
 
 - **Preparación del backend para producción (spec 040)**: `Dockerfile` multi-etapa (build con Temurin 21 JDK y runtime ligero con Temurin 21 JRE, usuario no-root `appuser`, JVM flags optimizados para serverless Cloud Run: `-XX:MaxRAMPercentage=75.0 -XX:+UseSerialGC -XX:TieredStopAtLevel=1`), `.dockerignore`, perfil `application-prod.properties` (externalización estricta por env vars, pool HikariCP = 5 para Aiven, SSL, `server.forward-headers-strategy=framework` para resolución de IP real en Rate Limiting tras proxy inverso y `app.cookie.secure=true` en cookies del refresh token).
+- **Precio, estado de pista y seed de demostración (spec 043)**: Campos `precioHora` (`BigDecimal`) y `estado` (`EstadoPista`: `ACTIVA`, `MANTENIMIENTO`) en `Pista`. Rechazo con HTTP 409 (`PistaEnMantenimientoException`) en `crear` y `actualizar` de `ReservaService`. Cálculo de `costeEstimado` (`@Transient`) y regla de negocio `esJugada(ahora)` en `Reserva`. Actualización de `DisponibilidadDiaDTO` con precio y estado. Generador en memoria POJO puro `DemoDataPlanGenerator` (800-1500 reservas con distribución pico y 0 solapamientos con semilla 42L) y `DemoDataSeeder` condicionado por `app.seed.demo=true` e idempotente con dominios `@seed.invalid`.
 
 > **Nota para futuras implementaciones:** Actualizar este archivo al finalizar cada cambio funcional relevante.
 
