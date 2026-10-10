@@ -41,12 +41,14 @@ Para evaluar la aplicación y explorar el panel de administración sin riesgo de
 
 ## Tecnologías usadas
 
-- Java + Spring Boot
+- Java 25 + Spring Boot 4
 - Spring Security + JWT
+- Spring AOP (control de accesos y salvaguardas demo)
 - MySQL
-- React
-- Vite
-- Tailwind CSS
+- React 19 + Vite 8
+- Tailwind CSS v4
+- Three.js + React Three Fiber (escena 3D interactiva)
+- Framer Motion (animaciones e interactividad)
 
 ## Requisitos previos
 
@@ -158,10 +160,13 @@ padel-backend/
 │   │   │       ├── repositories/
 │   │   │       └── services/
 │   │   └── resources/
-│   │       └── application.properties
+│   │       ├── application.properties
+│   │       ├── application-prod.properties
+│   │       └── migracion_reservas_usuario.sql
 │   └── test/
-├── pom.xml
-└── README.md
+├── Dockerfile
+├── migracion_pista_precio_estado.sql
+└── pom.xml
 ```
 
 ## Frontend (React + Vite)
@@ -212,18 +217,19 @@ padel-frontend/
 │   │   ├── LoginPage.tsx
 │   │   ├── NotFoundPage.tsx
 │   │   ├── PerfilPage.tsx
-│   │   ├── PrivacidadPage.tsx
-│   │   ├── TerminosPage.tsx
 │   │   ├── PistasPage.tsx
+│   │   ├── PrivacidadPage.tsx
 │   │   ├── RegisterPage.tsx
-│   │   └── ReservasPage.tsx
+│   │   ├── ReservasPage.tsx
+│   │   └── TerminosPage.tsx
 │   ├── services/
 │   │   └── api.ts
 │   ├── types/
 │   │   └── index.ts
 │   ├── App.tsx
 │   ├── index.css
-│   └── main.tsx
+│   ├── main.tsx
+│   └── vite-env.d.ts
 ├── index.html
 ├── package.json
 ├── tsconfig.json
@@ -243,6 +249,8 @@ padel-frontend/
 | `GET`    | `/auth/usuarios`                          | Sí                       | Sí                    | Listado completo de usuarios |
 | `PUT`    | `/auth/perfil`                            | Sí                       | No                    | Actualiza datos de perfil / password |
 | `PUT`    | `/auth/perfil/avatar`                     | Sí                       | No                    | Sube y actualiza foto de avatar a Cloudinary |
+| `GET`    | `/auth/mis-datos`                         | Sí                       | No                    | RGPD: exportación completa de datos personales y reservas en JSON |
+| `DELETE` | `/auth/cuenta`                            | Sí                       | No                    | RGPD: derecho al olvido y eliminación total de cuenta y reservas |
 | `POST`   | `/upload`                                 | Sí                       | No                    | Subida general optimizada a Cloudinary |
 | `GET`    | `/pistas`                                 | **No**                   | No                    | Listado público de pistas |
 | `GET`    | `/pistas/:id`                             | **No**                   | No                    | Detalle de pista |
@@ -258,11 +266,16 @@ padel-frontend/
 | `POST`   | `/sede/fotos`                             | Sí                       | Sí                    | Subida de foto de sede (máx 10) |
 | `DELETE` | `/sede/fotos/:id`                         | Sí                       | Sí                    | Borrado de foto de sede |
 | `GET`    | `/reservas`                               | Sí                       | No                    | Listado de reservas |
+| `GET`    | `/reservas/disponibilidad`                | **No**                   | No                    | Consulta de franjas ocupadas por pista y fecha |
+| `GET`    | `/reservas/disponibilidad-dia`            | **No**                   | No                    | Matriz completa de disponibilidad del día para todas las pistas |
 | `GET`    | `/reservas/:id`                           | Sí                       | No                    | Detalle de reserva |
 | `POST`   | `/reservas`                               | Sí                       | No                    | Creación atómica de reserva |
 | `PUT`    | `/reservas/:id`                           | Sí                       | No                    | Modificación de reserva |
 | `DELETE` | `/reservas/:id`                           | Sí                       | No                    | Cancelación de reserva |
 | `DELETE` | `/reservas`                               | Sí                       | Sí                    | Eliminación masiva |
+| `GET`    | `/admin/configuracion`                    | Sí                       | Sí                    | Consulta de configuración global del club (horarios, duraciones) |
+| `PUT`    | `/admin/configuracion`                    | Sí                       | Sí                    | Modificación de configuración del club |
+| `GET`    | `/configuracion/duraciones`               | **No**                   | No                    | Consulta pública de duraciones de reserva permitidas |
 
 ## 🔐 Seguridad de Autenticación (OAuth 2.0 / OWASP)
 
@@ -321,6 +334,8 @@ La arquitectura de despliegue en la nube está diseñada para alta disponibilida
 | `CLOUDINARY_API_KEY` | Clave pública de API Cloudinary | `123456789012345` |
 | `CLOUDINARY_API_SECRET` | Secreto de API Cloudinary | *(secreto en Cloud Secret Manager)* |
 | `ADMIN_SEED_PASSWORD` | Contraseña del admin principal al primer arranque | *(secreto)* |
+| `DEMO_ADMIN_SEED_PASSWORD` | Contraseña personalizada para el usuario demo admin | `Demo2026!` (opcional) |
+| `FRONTEND_ORIGIN` | Origen frontend permitido para CORS | `https://reserva-pistas-de-padel.netlify.app` |
 | `PORT` | Puerto HTTP (inyectado por Cloud Run) | `8081` |
 | `APP_SEED_DEMO` | Activa el seeder de datos ficticios al arrancar | `false` (omitir en producción) |
 
