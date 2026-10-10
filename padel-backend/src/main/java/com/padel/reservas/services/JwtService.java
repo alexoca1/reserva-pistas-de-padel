@@ -33,7 +33,7 @@ public class JwtService {
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION_MS))
                 .claim("roles", roles)
-                .signWith(getSecretKey())
+                .signWith(getSecretKey(), Jwts.SIG.HS256)
                 .compact();
     }
 
