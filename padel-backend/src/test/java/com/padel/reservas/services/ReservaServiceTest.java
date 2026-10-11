@@ -238,4 +238,26 @@ class ReservaServiceTest {
         assertThrows(org.springframework.web.server.ResponseStatusException.class, 
             () -> reservaService.actualizar(r, dto, new Pista()));
     }
+
+    @Test
+    void crear_usuarioCon10ReservasActivas_lanzaLimiteReservasException() {
+        Usuario usuario = new Usuario();
+        usuario.setEmail("jugador@test.com");
+
+        List<Reserva> diezReservas = new java.util.ArrayList<>();
+        for (int i = 1; i <= 10; i++) {
+            Reserva r = new Reserva();
+            r.setEstado(EstadoReserva.CONFIRMADA);
+            r.setFechaReserva(LocalDate.now().plusDays(i));
+            r.setHoraInicio(LocalTime.of(10, 0));
+            diezReservas.add(r);
+        }
+        when(reservaRepository.findByUsuarioEmail("jugador@test.com")).thenReturn(diezReservas);
+
+        CreateReservaDTO dto = new CreateReservaDTO(
+                LocalDate.now().plusDays(15), "10:00", "11:30", "Ana", "600111222", 1L, null, null);
+
+        assertThrows(com.padel.reservas.exception.LimiteReservasException.class,
+                () -> reservaService.crear(dto, new Pista(), usuario));
+    }
 }

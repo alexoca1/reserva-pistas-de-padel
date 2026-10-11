@@ -315,6 +315,7 @@ public class AuthController {
     // Lista todos los usuarios registrados (solo ADMIN)
     @GetMapping("/usuarios")
     @PreAuthorize("hasRole('ADMIN')")
+    @com.padel.reservas.config.NoDemoAdmin
     public ResponseEntity<?> listarUsuarios() {
         List<Map<String, Object>> usuarios = usuarioRepository.findAll().stream()
                 .map(u -> {
@@ -334,6 +335,7 @@ public class AuthController {
     }
 
     @PutMapping("/perfil")
+    @com.padel.reservas.config.NoDemoAdmin
     public ResponseEntity<?> updatePerfil(@Valid @RequestBody UpdatePerfilDTO dto, Authentication authentication) {
         Optional<Usuario> usuarioOpt;
         if (isAdmin(authentication) && dto.usuarioId() != null) {

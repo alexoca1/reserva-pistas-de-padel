@@ -8,6 +8,7 @@ import com.padel.reservas.entities.FranjaReservada;
 import com.padel.reservas.entities.Pista;
 import com.padel.reservas.entities.Reserva;
 import com.padel.reservas.entities.Usuario;
+import com.padel.reservas.exception.LimiteReservasException;
 import com.padel.reservas.exception.PistaEnMantenimientoException;
 import com.padel.reservas.exception.ReservaSolapadaException;
 import com.padel.reservas.repositories.ReservaRepository;
@@ -44,6 +45,18 @@ public class ReservaService {
 
         validarDuracionYHorario(inicio, fin);
         validarLimitesYSolapamientoUsuario(titular, dto.fechaReserva(), null, inicio, fin);
+
+        long reservasActivas = reservaRepository
+            .findByUsuarioEmail(titular.getEmail())
+            .stream()
+            .filter(r -> r.getEstado() == EstadoReserva.CONFIRMADA
+                     && LocalDateTime.of(r.getFechaReserva(), r.getHoraInicio()).isAfter(LocalDateTime.now()))
+            .count();
+
+        if (reservasActivas >= 10) {
+            throw new LimiteReservasException(
+                "No puedes tener más de 10 reservas activas simultáneas");
+        }
 
         Reserva reserva = new Reserva();
         reserva.setFechaReserva(dto.fechaReserva());

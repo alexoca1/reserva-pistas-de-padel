@@ -29,6 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -162,5 +163,36 @@ class DemoAdminSecurityTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"numeroPista\": 9, \"tieneIluminacion\": true, \"comentarios\": \"pista real\"}"))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void putPerfil_demoAdmin_bloqueadoCon403() throws Exception {
+        mockMvc.perform(put("/auth/perfil")
+                        .with(jwt().jwt(j -> j.claim("sub", "demo@padelreservas.es"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\": \"Demo\", \"apellidos\": \"Admin\", \"email\": \"demo@padelreservas.es\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Acción no disponible en modo demostración."));
+    }
+
+    @Test
+    void getUsuarios_demoAdmin_bloqueadoCon403() throws Exception {
+        mockMvc.perform(get("/auth/usuarios")
+                        .with(jwt().jwt(j -> j.claim("sub", "demo@padelreservas.es"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Acción no disponible en modo demostración."));
+    }
+
+    @Test
+    void putReserva_demoAdmin_bloqueadoCon403() throws Exception {
+        mockMvc.perform(put("/reservas/1")
+                        .with(jwt().jwt(j -> j.claim("sub", "demo@padelreservas.es"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"pistaId\": 1, \"fechaReserva\": \"2026-12-01\", \"horaInicio\": \"10:00\", \"horaFin\": \"11:30\", \"nombreJugador\": \"Demo\", \"telefono\": \"600123123\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Acción no disponible en modo demostración."));
     }
 }

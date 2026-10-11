@@ -124,6 +124,7 @@ public class ReservasController {
     }
 
     @PutMapping("/reservas/{id}")
+    @com.padel.reservas.config.NoDemoAdmin
     public ResponseEntity<?> updateReserva(@Valid @RequestBody CreateReservaDTO dto, @PathVariable Long id, Authentication authentication) {
         Optional<Reserva> reserva = isAdmin(authentication)
                 ? reservaRepository.findById(id)

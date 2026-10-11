@@ -45,6 +45,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
     }
 
+    @ExceptionHandler(LimiteReservasException.class)
+    public ResponseEntity<Map<String, String>> handleLimiteReservas(
+        LimiteReservasException ex) {
+        return ResponseEntity.status(409)
+            .body(Map.of("error", ex.getMessage()));
+    }
+
     @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
     public ResponseEntity<Map<String, String>> handleResponseStatusException(org.springframework.web.server.ResponseStatusException ex) {
         return ResponseEntity.status(ex.getStatusCode()).body(Map.of("error", ex.getReason() != null ? ex.getReason() : ex.getMessage()));

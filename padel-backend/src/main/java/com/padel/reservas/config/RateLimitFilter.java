@@ -39,7 +39,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
         "POST:/auth/login",    5L,
         "POST:/auth/register", 3L,
         "POST:/auth/refresh",  20L,
-        "PUT:/auth/perfil",    10L
+        "PUT:/auth/perfil",    10L,
+        "POST:/reservas",      10L
     );
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -69,7 +70,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         String ip        = request.getRemoteAddr();
-        String bucketKey = ip + ":" + clave;
+        String bucketKey = "POST:/reservas".equals(clave) ? ("reservas:" + ip) : (ip + ":" + clave);
 
         Bucket bucket = buckets.computeIfAbsent(bucketKey, k ->
             Bucket.builder()
