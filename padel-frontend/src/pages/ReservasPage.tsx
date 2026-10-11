@@ -19,6 +19,7 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { BuscadorJugador } from "@/components/BuscadorJugador";
 import { IconPlus } from "@/components/icons";
+import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { motion } from "framer-motion";
@@ -85,6 +86,8 @@ export function ReservasPage() {
   // diálogo
   const [openFormDialog, setOpenFormDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [reservaConfirmada, setReservaConfirmada] = useState<Reserva | null>(null);
+  const [openConfirmacionQR, setOpenConfirmacionQR] = useState(false);
   const [reservaEditando, setReservaEditando] = useState<Reserva | null>(null);
   const [reservaEliminando, setReservaEliminando] = useState<Reserva | null>(null);
   const [form, setForm] = useState<ReservaForm>(initialForm);
@@ -115,6 +118,16 @@ export function ReservasPage() {
     setAPeticionDelJugador(false);
     setForm(initialForm);
     setError("");
+    if (returnTo) {
+      navigate(returnTo, {
+        state: selectedUserIdNav ? { selectedUserId: selectedUserIdNav } : undefined,
+      });
+    }
+  };
+
+  const cerrarConfirmacion = () => {
+    setOpenConfirmacionQR(false);
+    setReservaConfirmada(null);
     if (returnTo) {
       navigate(returnTo, {
         state: selectedUserIdNav ? { selectedUserId: selectedUserIdNav } : undefined,
@@ -402,21 +415,28 @@ export function ReservasPage() {
       if (reservaEditando?.id) {
         await reservasService.update(reservaEditando.id, payload);
         mostrarToast("Reserva actualizada");
+        setOpenFormDialog(false);
+        setReservaEditando(null);
+        setUsuarioSeleccionadoId(null);
+        setForm(initialForm);
+        if (returnTo) {
+          navigate(returnTo, {
+            state: selectedUserIdNav ? { selectedUserId: selectedUserIdNav } : undefined,
+          });
+          return;
+        }
+        await cargarDisponibilidad(fechaVista);
       } else {
-        await reservasService.create(payload);
+        const savedReserva = await reservasService.create(payload);
+        setReservaConfirmada(savedReserva);
+        setOpenConfirmacionQR(true);
+        setOpenFormDialog(false);
+        setReservaEditando(null);
+        setUsuarioSeleccionadoId(null);
+        setForm(initialForm);
         mostrarToast("Reserva creada");
+        await cargarDisponibilidad(fechaVista);
       }
-      setOpenFormDialog(false);
-      setReservaEditando(null);
-      setUsuarioSeleccionadoId(null);
-      setForm(initialForm);
-      if (returnTo) {
-        navigate(returnTo, {
-          state: selectedUserIdNav ? { selectedUserId: selectedUserIdNav } : undefined,
-        });
-        return;
-      }
-      await cargarDisponibilidad(fechaVista);
     } catch (e) {
       setError(getErrorMessage(e, "Error al guardar reserva"));
       await cargarDisponibilidad(fechaVista);
@@ -818,6 +838,54 @@ export function ReservasPage() {
               onClick={() => void confirmarEliminar()}
             >
               Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Diálogo de confirmación con QR (Spec UX) ── */}
+      <Dialog
+        open={openConfirmacionQR}
+        className="max-w-sm"
+        onOpenChange={(open) => {
+          if (!open) cerrarConfirmacion();
+        }}
+      >
+        <DialogContent className="text-center">
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-center">¡Reserva confirmada!</DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center justify-center gap-3 py-2 text-center">
+            {reservaConfirmada?.codigoReserva ? (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Guarda este QR para acceder a la pista.
+                </p>
+                <div className="mx-auto flex items-center justify-center rounded-xl border border-border/40 bg-white p-3 shadow-md">
+                  <QRCodeSVG
+                    value={reservaConfirmada.codigoReserva}
+                    size={180}
+                    level="M"
+                  />
+                </div>
+                <span className="font-mono text-xs text-muted-foreground tracking-widest">
+                  {reservaConfirmada.codigoReserva}
+                </span>
+                <p className="text-xs text-muted-foreground">
+                  Haz una captura de pantalla para guardarlo.
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Reserva creada correctamente.
+              </p>
+            )}
+          </div>
+
+          <DialogFooter className="justify-center sm:justify-center">
+            <Button onClick={cerrarConfirmacion} className="w-full sm:w-auto">
+              Entendido
             </Button>
           </DialogFooter>
         </DialogContent>

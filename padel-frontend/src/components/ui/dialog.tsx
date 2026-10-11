@@ -89,5 +89,6 @@ export function DialogTitle({ children, className = "" }: DialogSectionProps) {
 }
 
 export function DialogFooter({ children, className = "" }: DialogSectionProps) {
-  return <div className={`mt-6 flex flex-wrap justify-end gap-3 ${className}`}>{children}</div>;
+  const justifyClass = className.includes("justify-") ? "" : "justify-end";
+  return <div className={`mt-6 flex flex-wrap ${justifyClass} gap-3 ${className}`}>{children}</div>;
 }
