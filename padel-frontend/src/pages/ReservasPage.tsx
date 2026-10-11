@@ -57,8 +57,8 @@ const HORAS_RESERVA = Array.from({ length: 33 }, (_, i) => minutosAHora(6 * 60 +
 // ─── Componente ────────────────────────────────────────────────────────────────
 
 export function ReservasPage() {
-  const { user, isAdmin } = useAuth();
-  const { mostrarToast } = useToast();
+  const { user, isAdmin, isDemoAdmin } = useAuth();
+  const { mostrarToast, toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -152,7 +152,7 @@ export function ReservasPage() {
           : []
       );
 
-      if (isAdmin && usuarios.length === 0) {
+      if (isAdmin && !isDemoAdmin && usuarios.length === 0) {
         const usuariosData = await usuariosService.getAll();
         if (Array.isArray(usuariosData)) setUsuarios(usuariosData);
       }
@@ -165,7 +165,7 @@ export function ReservasPage() {
 
   useEffect(() => {
     void cargarDisponibilidad(fechaVista);
-  }, [fechaVista, isAdmin]);
+  }, [fechaVista, isAdmin, isDemoAdmin]);
 
   useEffect(() => {
     configuracionService.getDuraciones()
@@ -266,7 +266,7 @@ export function ReservasPage() {
     const initHoraInicio = horaInicio ?? "";
     const initHoraFin = initHoraInicio ? sumarMinutos(initHoraInicio, defDur) : "";
 
-    if (isAdmin) {
+    if (isAdmin && !isDemoAdmin) {
       setUsuarioSeleccionadoId(null);
       if (usuarios.length === 0) {
         try {
@@ -311,7 +311,7 @@ export function ReservasPage() {
       : defDur;
     setDuracionMinutos(configDuraciones.duracionesPermitidas.includes(duracion) ? duracion : defDur);
 
-    if (isAdmin) {
+    if (isAdmin && !isDemoAdmin) {
       setUsuarioSeleccionadoId(franja.usuarioId);
       const userObj = usuarios.find((u) => u.id === franja.usuarioId);
       setForm({
@@ -371,6 +371,17 @@ export function ReservasPage() {
 
   const guardarReserva = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isDemoAdmin) {
+      toast({
+        title: "Modo demostración",
+        description: reservaEditando?.id
+          ? "Los cambios en reservas no se guardan en modo demo."
+          : "Las reservas no se guardan en modo demo.",
+        variant: "default",
+      });
+      setOpenFormDialog(false);
+      return;
+    }
     setError("");
 
     const horaFinCalculada = form.horaInicio ? sumarMinutos(form.horaInicio, duracionMinutos) : "";
@@ -447,6 +458,15 @@ export function ReservasPage() {
 
   const confirmarEliminar = async () => {
     if (!reservaEliminando?.id) return;
+    if (isDemoAdmin) {
+      toast({
+        title: "Modo demostración",
+        description: "Las cancelaciones no tienen efecto en modo demo.",
+        variant: "default",
+      });
+      setOpenDeleteDialog(false);
+      return;
+    }
     try {
       setLoading(true);
       await reservasService.delete(reservaEliminando.id, { aPeticionDelJugador });
@@ -642,7 +662,7 @@ export function ReservasPage() {
 
             <div className="grid gap-2">
               <Label htmlFor="nombreJugador">Jugador</Label>
-              {isAdmin ? (
+              {isAdmin && !isDemoAdmin ? (
                 <BuscadorJugador
                   id="nombreJugador"
                   usuarios={usuarios.filter((u) => u.id !== user?.id)}

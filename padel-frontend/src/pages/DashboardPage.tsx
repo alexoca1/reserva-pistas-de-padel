@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 
 export function DashboardPage() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isDemoAdmin } = useAuth();
   const { mostrarToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -57,7 +57,7 @@ export function DashboardPage() {
 
   // Carga de usuarios para admin
   useEffect(() => {
-    if (isAdmin && usuarios.length === 0) {
+    if (isAdmin && !isDemoAdmin && usuarios.length === 0) {
       usuariosService
         .getAll()
         .then((data) => {
@@ -67,11 +67,11 @@ export function DashboardPage() {
           // Ignorar error no bloqueante
         });
     }
-  }, [isAdmin, usuarios.length]);
+  }, [isAdmin, isDemoAdmin, usuarios.length]);
 
   // Carga de próximas reservas
   const cargarProximasReservas = async () => {
-    if (isAdmin && usuarioSeleccionadoId === null) {
+    if (isAdmin && !isDemoAdmin && usuarioSeleccionadoId === null) {
       setLoadingReserva(false);
       setProximasReservas([]);
       setTotalFuturas(0);
@@ -335,7 +335,7 @@ export function DashboardPage() {
               {isAdmin ? "Próximas reservas del jugador" : "Tus próximas reservas"}
             </CardTitle>
 
-            {isAdmin ? (
+            {isAdmin && !isDemoAdmin ? (
               <div className="flex items-center gap-2 sm:w-72">
                 <Label htmlFor={jugadorSelectId} className="sr-only">
                   Jugador

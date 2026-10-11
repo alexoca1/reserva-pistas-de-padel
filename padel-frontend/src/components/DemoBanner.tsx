@@ -1,17 +1,21 @@
+import { useAuth } from "@/context/AuthContext";
+import { ShieldAlert } from "lucide-react";
+
 export function DemoBanner() {
+  const { isDemoAdmin } = useAuth();
+  if (!isDemoAdmin) return null;
+
   return (
-    <div className="relative z-50 w-full border-b border-white/10 bg-black/40 px-4 py-1.5 text-center text-xs text-muted-foreground backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-4 gap-y-1 sm:justify-between">
-        <span>🚧 Proyecto de demostración · Datos ficticios con fines educativos</span>
-        <a
-          href="https://github.com/alexoca1/reserva-pistas-de-padel"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 font-medium text-primary transition hover:text-accent hover:underline"
-        >
-          Ver código en GitHub →
-        </a>
-      </div>
+    <div className="w-full bg-amber-500/10 border-b border-amber-500/30
+                    px-4 py-2 flex items-center gap-2 text-sm
+                    text-amber-600 dark:text-amber-400">
+      <ShieldAlert className="h-4 w-4 shrink-0" />
+      <span>
+        <strong>Modo demostración.</strong> Estás explorando la aplicación
+        con datos ficticios. Las acciones de escritura (reservas, edición
+        de perfil, gestión de pistas) no tienen ningún efecto real.
+        Solo el administrador real puede ejecutarlas.
+      </span>
     </div>
   );
 }

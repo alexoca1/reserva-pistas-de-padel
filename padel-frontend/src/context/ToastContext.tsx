@@ -15,6 +15,7 @@ interface ToastItem {
 
 interface ToastContextValue {
   mostrarToast: (mensaje: string) => void;
+  toast: (options: { title?: string; description?: string; variant?: string }) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
@@ -31,6 +32,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     }, 4000);
   }, []);
 
+  const toast = useCallback(
+    (options: { title?: string; description?: string; variant?: string }) => {
+      mostrarToast(options.description || options.title || "");
+    },
+    [mostrarToast]
+  );
+
   useEffect(() => {
     const handleAppToast = (e: Event) => {
       const custom = e as CustomEvent<{ mensaje?: string }>;
@@ -43,7 +51,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, [mostrarToast]);
 
   return (
-    <ToastContext.Provider value={{ mostrarToast }}>
+    <ToastContext.Provider value={{ mostrarToast, toast }}>
       {children}
       <div
         className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full"

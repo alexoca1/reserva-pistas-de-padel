@@ -25,8 +25,8 @@ import {
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
 
 export function PerfilPage() {
-  const { user, isAdmin, actualizarUsuario, logout } = useAuth();
-  const { mostrarToast } = useToast();
+  const { user, isAdmin, isDemoAdmin, actualizarUsuario, logout } = useAuth();
+  const { mostrarToast, toast } = useToast();
   const navigate = useNavigate();
   const jugadorSelectId = useId();
 
@@ -179,6 +179,14 @@ export function PerfilPage() {
 
   const handleGuardarPropio = async (e: FormEvent) => {
     e.preventDefault();
+    if (isDemoAdmin) {
+      toast({
+        title: "Modo demostración",
+        description: "Los cambios de perfil no se guardan en modo demo.",
+        variant: "default",
+      });
+      return;
+    }
     setErrorPropio("");
 
     if (mostrarCambioPassword || formPropio.newPassword || formPropio.currentPassword || formPropio.confirmPassword) {
@@ -251,7 +259,7 @@ export function PerfilPage() {
 
   // Carga de usuarios para admin (excluyendo al propio admin)
   useEffect(() => {
-    if (isAdmin && usuarios.length === 0) {
+    if (isAdmin && !isDemoAdmin && usuarios.length === 0) {
       usuariosService
         .getAll()
         .then((data) => {
@@ -262,7 +270,7 @@ export function PerfilPage() {
           // Error no bloqueante
         });
     }
-  }, [isAdmin, user?.id, usuarios.length]);
+  }, [isAdmin, isDemoAdmin, user?.id, usuarios.length]);
 
   const handleSeleccionarJugador = (id: number | null) => {
     setUsuarioSeleccionadoId(id);
@@ -287,6 +295,14 @@ export function PerfilPage() {
 
   const handleGuardarJugador = async (e: FormEvent) => {
     e.preventDefault();
+    if (isDemoAdmin) {
+      toast({
+        title: "Modo demostración",
+        description: "La edición de jugadores no está disponible en modo demo.",
+        variant: "default",
+      });
+      return;
+    }
     if (usuarioSeleccionadoId === null) return;
 
     setErrorJugador("");
@@ -718,7 +734,7 @@ export function PerfilPage() {
       </motion.div>
 
       {/* Sección 2: Editar datos de un jugador (Solo Admin) */}
-      {isAdmin ? (
+      {isAdmin && !isDemoAdmin ? (
         <motion.div variants={fadeUp}>
           <Card>
             <CardHeader>
@@ -888,17 +904,23 @@ export function PerfilPage() {
                   Anonimiza tus datos personales de forma irreversible y revoca todas las sesiones activas.
                 </p>
               </div>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  setTextoConfirmacion("");
-                  setErrorEliminar("");
-                  setOpenDeleteModal(true);
-                }}
-                className="shrink-0"
-              >
-                Eliminar mi cuenta
-              </Button>
+              {isDemoAdmin ? (
+                <span className="text-xs italic text-muted-foreground self-center">
+                  No disponible en modo demo
+                </span>
+              ) : (
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setTextoConfirmacion("");
+                    setErrorEliminar("");
+                    setOpenDeleteModal(true);
+                  }}
+                  className="shrink-0"
+                >
+                  Eliminar mi cuenta
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
