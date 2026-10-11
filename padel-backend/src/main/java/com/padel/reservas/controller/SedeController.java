@@ -1,5 +1,6 @@
 package com.padel.reservas.controller;
 
+import com.padel.reservas.config.NoDemoAdmin;
 import com.padel.reservas.dto.SubidaResult;
 import com.padel.reservas.entities.FotoSede;
 import com.padel.reservas.repositories.FotoSedeRepository;
@@ -28,6 +29,7 @@ public class SedeController {
 
     @PostMapping("/sede/fotos")
     @PreAuthorize("hasRole('ADMIN')")
+    @NoDemoAdmin
     public ResponseEntity<?> subirFoto(
             @RequestParam("file") MultipartFile file) throws Exception {
 
@@ -51,6 +53,7 @@ public class SedeController {
 
     @DeleteMapping("/sede/fotos/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @NoDemoAdmin
     public ResponseEntity<?> eliminarFoto(@PathVariable Long id)
             throws Exception {
 

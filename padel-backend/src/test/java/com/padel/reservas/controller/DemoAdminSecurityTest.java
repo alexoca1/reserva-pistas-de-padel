@@ -30,12 +30,14 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.mock.web.MockMultipartFile;
 
-@WebMvcTest({PistasController.class, ReservasController.class, AdminController.class, AuthController.class})
+@WebMvcTest({PistasController.class, ReservasController.class, AdminController.class, AuthController.class, SedeController.class, FotoPistaController.class})
 @Import({SecurityConfig.class, JwtService.class, JwtSecretKeyProvider.class, DemoAdminAspect.class})
 @EnableAspectJAutoProxy
 @TestPropertySource(properties = "jwt.secret=dGVzdC1zZWNyZXQta2V5LWZvci11bml0LXRlc3RzLTEyMzQ1Njc4OTAxMjM0NTY=")
@@ -55,6 +57,9 @@ class DemoAdminSecurityTest {
 
     @MockitoBean
     private FotoPistaRepository fotoPistaRepository;
+
+    @MockitoBean
+    private FotoSedeRepository fotoSedeRepository;
 
     @MockitoBean
     private CloudinaryService cloudinaryService;
@@ -192,6 +197,46 @@ class DemoAdminSecurityTest {
                                 .authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"pistaId\": 1, \"fechaReserva\": \"2026-12-01\", \"horaInicio\": \"10:00\", \"horaFin\": \"11:30\", \"nombreJugador\": \"Demo\", \"telefono\": \"600123123\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Acción no disponible en modo demostración."));
+    }
+
+    @Test
+    void postSedeFotos_demoAdmin_bloqueadoCon403() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "foto.jpg", MediaType.IMAGE_JPEG_VALUE, new byte[]{1, 2, 3});
+        mockMvc.perform(multipart("/sede/fotos").file(file)
+                        .with(jwt().jwt(j -> j.claim("sub", "demo@padelreservas.es"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Acción no disponible en modo demostración."));
+    }
+
+    @Test
+    void deleteSedeFotos_demoAdmin_bloqueadoCon403() throws Exception {
+        mockMvc.perform(delete("/sede/fotos/1")
+                        .with(jwt().jwt(j -> j.claim("sub", "demo@padelreservas.es"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Acción no disponible en modo demostración."));
+    }
+
+    @Test
+    void postPistasFotos_demoAdmin_bloqueadoCon403() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "foto.jpg", MediaType.IMAGE_JPEG_VALUE, new byte[]{1, 2, 3});
+        mockMvc.perform(multipart("/pistas/1/fotos").file(file)
+                        .with(jwt().jwt(j -> j.claim("sub", "demo@padelreservas.es"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Acción no disponible en modo demostración."));
+    }
+
+    @Test
+    void deletePistasFotos_demoAdmin_bloqueadoCon403() throws Exception {
+        mockMvc.perform(delete("/pistas/1/fotos/1")
+                        .with(jwt().jwt(j -> j.claim("sub", "demo@padelreservas.es"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value("Acción no disponible en modo demostración."));
     }

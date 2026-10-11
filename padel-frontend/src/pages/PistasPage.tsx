@@ -186,6 +186,7 @@ export function PistasPage() {
   };
 
   const handleSubirFoto = async (e: ChangeEvent<HTMLInputElement>) => {
+    if (isDemoAdmin) return;
     const file = e.target.files?.[0];
     if (!file || !pistaEditando?.id) return;
 
@@ -213,7 +214,7 @@ export function PistasPage() {
   };
 
   const handleSetPortada = async (fotoId: number) => {
-    if (!pistaEditando?.id) return;
+    if (isDemoAdmin || !pistaEditando?.id) return;
     try {
       await fotoPistaService.setPortada(pistaEditando.id, fotoId);
       const portadaFoto = fotosPistaEditando.find((f) => f.id === fotoId);
@@ -231,7 +232,7 @@ export function PistasPage() {
   };
 
   const handleEliminarFoto = async (fotoId: number) => {
-    if (!pistaEditando?.id) return;
+    if (isDemoAdmin || !pistaEditando?.id) return;
     try {
       await fotoPistaService.eliminar(pistaEditando.id, fotoId);
       setFotosPistaEditando((prev) => {
@@ -660,22 +661,30 @@ export function PistasPage() {
                   <Label className="text-sm font-semibold">
                     Galería de fotos ({fotosPistaEditando.length}/5)
                   </Label>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleSubirFoto}
-                  />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={fotosPistaEditando.length >= 5 || subiendoFoto}
-                    title={fotosPistaEditando.length >= 5 ? "Máximo 5 fotos alcanzado" : undefined}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {subiendoFoto ? "Subiendo..." : "Subir foto"}
-                  </Button>
+                  {isDemoAdmin ? (
+                    <span className="text-xs italic text-muted-foreground">
+                      No disponible en demo
+                    </span>
+                  ) : (
+                    <>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleSubirFoto}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={fotosPistaEditando.length >= 5 || subiendoFoto}
+                        title={fotosPistaEditando.length >= 5 ? "Máximo 5 fotos alcanzado" : undefined}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        {subiendoFoto ? "Subiendo..." : "Subir foto"}
+                      </Button>
+                    </>
+                  )}
                 </div>
 
                 {cargandoFotos ? (
@@ -702,48 +711,50 @@ export function PistasPage() {
                           </span>
                         ) : null}
 
-                        <div className="mt-1.5 flex w-full items-center justify-between gap-1">
-                          <Button
-                            type="button"
-                            variant={foto.esPortada ? "primary" : "secondary"}
-                            className={`h-7 px-2 text-xs ${foto.esPortada ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
-                            onClick={() => !foto.esPortada && handleSetPortada(foto.id)}
-                            title={foto.esPortada ? "Foto de portada" : "Establecer como portada"}
-                          >
-                            ⭐
-                          </Button>
+                        {!isDemoAdmin && (
+                          <div className="mt-1.5 flex w-full items-center justify-between gap-1">
+                            <Button
+                              type="button"
+                              variant={foto.esPortada ? "primary" : "secondary"}
+                              className={`h-7 px-2 text-xs ${foto.esPortada ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
+                              onClick={() => !foto.esPortada && handleSetPortada(foto.id)}
+                              title={foto.esPortada ? "Foto de portada" : "Establecer como portada"}
+                            >
+                              ⭐
+                            </Button>
 
-                          {fotoAEliminarId === foto.id ? (
-                            <div className="flex items-center gap-1">
+                            {fotoAEliminarId === foto.id ? (
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  className="h-7 px-2 text-xs"
+                                  onClick={() => handleEliminarFoto(foto.id)}
+                                >
+                                  Sí
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  className="h-7 px-2 text-xs"
+                                  onClick={() => setFotoAEliminarId(null)}
+                                >
+                                  No
+                                </Button>
+                              </div>
+                            ) : (
                               <Button
                                 type="button"
                                 variant="destructive"
                                 className="h-7 px-2 text-xs"
-                                onClick={() => handleEliminarFoto(foto.id)}
+                                onClick={() => setFotoAEliminarId(foto.id)}
+                                title="Eliminar foto"
                               >
-                                Sí
+                                ✕
                               </Button>
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                className="h-7 px-2 text-xs"
-                                onClick={() => setFotoAEliminarId(null)}
-                              >
-                                No
-                              </Button>
-                            </div>
-                          ) : (
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              className="h-7 px-2 text-xs"
-                              onClick={() => setFotoAEliminarId(foto.id)}
-                              title="Eliminar foto"
-                            >
-                              ✕
-                            </Button>
-                          )}
-                        </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

@@ -407,7 +407,7 @@ export function DashboardPage() {
       </motion.div>
 
       {/* Sección exclusiva de Administrador: Galería de la sede */}
-      {isAdmin && <GaleriaSedeAdmin />}
+      {isAdmin && !isDemoAdmin && <GaleriaSedeAdmin />}
 
       {/* Diálogo de confirmación de eliminación */}
       <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
