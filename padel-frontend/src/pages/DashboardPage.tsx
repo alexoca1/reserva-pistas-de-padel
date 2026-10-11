@@ -253,8 +253,8 @@ export function DashboardPage() {
         </Card>
       </motion.div>
 
-      {/* Grid de navegación (2 columnas) */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      {/* Grid de navegación */}
+      <div className={`grid grid-cols-1 gap-6 ${isAdmin ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
         <motion.div variants={fadeUp}>
           <Card className="h-full">
             <CardHeader>
@@ -286,6 +286,24 @@ export function DashboardPage() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {isAdmin && (
+          <motion.div variants={fadeUp}>
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="text-xl">Validar QR</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-muted-foreground">
+                  Escanea o introduce el código de reserva para validar el acceso a pista.
+                </p>
+                <Button onClick={() => navigate("/admin/validar-qr")} className="w-full sm:w-auto">
+                  Abrir validador
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
       </div>
 
       {/* Sección de ancho completo de Próximas Reservas */}

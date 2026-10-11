@@ -50,6 +50,7 @@ src/main/java/com/padel/reservas/
 |  |- FranjaDTO.java
 |  |- DisponibilidadDiaDTO.java
 |  |- SubidaResult.java
+|  |- ValidacionQRDTO.java
 |- entities/
 |  |- Usuario.java
 |  |- Pista.java
@@ -236,6 +237,21 @@ El backend usa `UpdateConfiguracionDTO` para `PUT /admin/configuracion`:
 - `duracionesPermitidas: String` ("60,90,120")
 - `maxMinutosReservaPorUsuarioDia: Integer`
 
+## DTO de Validación de QR de Reserva
+
+El backend usa `ValidacionQRDTO` (record) para `GET /reservas/validar-qr?codigo={codigo}`:
+
+- `reservaId: Long`
+- `codigoReserva: String`
+- `nombreJugador: String`
+- `telefono: String`
+- `fechaReserva: String`
+- `horaInicio: String`
+- `horaFin: String`
+- `numeroPista: Integer`
+- `estado: String`
+- `costeEstimado: BigDecimal`
+
 ## Endpoints Actuales (Fuente de Verdad)
 
 > Base URL: `http://localhost:8081`
@@ -280,6 +296,7 @@ El backend usa `UpdateConfiguracionDTO` para `PUT /admin/configuracion`:
 | PUT    | `/reservas/{id}`             | Sí                     | No                  | Usuario: actualiza su reserva; Admin: cualquier reserva                 |
 | DELETE | `/reservas/{id}`             | Sí                     | No                  | Borrado lógico (soft-delete): marca estado CANCELADA y timestamp fechaCancelacion |
 | GET    | `/reservas/{id}/pagos`       | Sí                     | No                  | Devuelve el historial de pagos asociados a la reserva |
+| GET    | `/reservas/validar-qr`       | Sí                     | Sí                  | Valida y devuelve datos de una reserva por código QR (`@PreAuthorize("hasRole('ADMIN')")`) |
 | DELETE | `/reservas`                  | Sí                     | Sí                  | Elimina todas las reservas (`@PreAuthorize("hasRole('ADMIN')")`)        |
 
 ### 4) Configuración del Club (`/admin/configuracion` y `/configuracion`)

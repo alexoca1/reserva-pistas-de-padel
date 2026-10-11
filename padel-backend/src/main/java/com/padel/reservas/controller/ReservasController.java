@@ -27,6 +27,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import com.padel.reservas.dto.CancelReservaDTO;
 import com.padel.reservas.dto.PagoDTO;
+import com.padel.reservas.dto.ValidacionQRDTO;
 import com.padel.reservas.services.PagoService;
 import com.padel.reservas.repositories.PagoRepository;
 
@@ -187,6 +188,26 @@ public class ReservasController {
                 )).toList();
 
         return ResponseEntity.ok(pagosDto);
+    }
+
+    @GetMapping("/reservas/validar-qr")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ValidacionQRDTO> validarQR(
+            @RequestParam String codigo) {
+        return reservaRepository.findByCodigoReserva(codigo)
+                .map(r -> ResponseEntity.ok(new ValidacionQRDTO(
+                        r.getId(),
+                        r.getCodigoReserva(),
+                        r.getNombreJugador(),
+                        r.getTelefono(),
+                        r.getFechaReserva().toString(),
+                        r.getHoraInicio().toString(),
+                        r.getHoraFin().toString(),
+                        r.getPista().getNumeroPista(),
+                        r.getEstado().name(),
+                        r.getCosteEstimado()
+                )))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/reservas")

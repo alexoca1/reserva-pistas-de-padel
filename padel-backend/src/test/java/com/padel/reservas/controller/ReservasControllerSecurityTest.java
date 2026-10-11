@@ -113,4 +113,66 @@ class ReservasControllerSecurityTest {
                                 .authorities(new SimpleGrantedAuthority("ROLE_DEMO_ADMIN"))))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void validarQR_sinToken_lanza401() throws Exception {
+        mockMvc.perform(get("/reservas/validar-qr")
+                        .param("codigo", "RES-TEST"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void validarQR_rolUser_lanza403() throws Exception {
+        mockMvc.perform(get("/reservas/validar-qr")
+                        .param("codigo", "RES-TEST")
+                        .with(jwt()
+                                .jwt(jwtBuilder -> jwtBuilder.subject("user@test.com"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_USER"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void validarQR_inexistente_rolAdmin_devuelve404() throws Exception {
+        when(reservaRepository.findByCodigoReserva("INEXISTENTE")).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/reservas/validar-qr")
+                        .param("codigo", "INEXISTENTE")
+                        .with(jwt()
+                                .jwt(jwtBuilder -> jwtBuilder.subject("admin@test.com"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void validarQR_existente_rolAdmin_devuelve200() throws Exception {
+        com.padel.reservas.entities.Pista pista = new com.padel.reservas.entities.Pista();
+        pista.setNumeroPista(2);
+        pista.setPrecioHora(java.math.BigDecimal.valueOf(20.0));
+
+        Reserva reserva = new Reserva();
+        reserva.setId(10L);
+        reserva.setCodigoReserva("EXISTENTE");
+        reserva.setNombreJugador("Carlos");
+        reserva.setTelefono("600123456");
+        reserva.setFechaReserva(java.time.LocalDate.of(2026, 10, 15));
+        reserva.setHoraInicio(java.time.LocalTime.of(10, 0));
+        reserva.setHoraFin(java.time.LocalTime.of(11, 30));
+        reserva.setPista(pista);
+        reserva.setEstado(com.padel.reservas.entities.EstadoReserva.CONFIRMADA);
+
+        when(reservaRepository.findByCodigoReserva("EXISTENTE")).thenReturn(Optional.of(reserva));
+
+        mockMvc.perform(get("/reservas/validar-qr")
+                        .param("codigo", "EXISTENTE")
+                        .with(jwt()
+                                .jwt(jwtBuilder -> jwtBuilder.subject("admin@test.com"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.reservaId").value(10))
+                .andExpect(jsonPath("$.codigoReserva").value("EXISTENTE"))
+                .andExpect(jsonPath("$.nombreJugador").value("Carlos"))
+                .andExpect(jsonPath("$.telefono").value("600123456"))
+                .andExpect(jsonPath("$.numeroPista").value(2))
+                .andExpect(jsonPath("$.estado").value("CONFIRMADA"));
+    }
 }

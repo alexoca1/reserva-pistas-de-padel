@@ -10,6 +10,7 @@ import type {
   ReservaPayload,
   SubidaResult,
   Usuario,
+  ValidacionQR,
 } from "../types";
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
@@ -208,6 +209,10 @@ export const reservasService = {
     }),
   getPagos: (id: number) =>
     fetchAPI<import("../types").PagoDTO[]>(`/reservas/${id}/pagos`),
+  validarQR: (codigo: string) =>
+    fetchAPI<ValidacionQR>(
+      `/reservas/validar-qr?codigo=${encodeURIComponent(codigo)}`
+    ),
 };
 
 export const usuariosService = {

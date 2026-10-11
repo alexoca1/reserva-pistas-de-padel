@@ -140,4 +140,17 @@ export interface PagoDTO {
   concepto: string;
 }
 
+export interface ValidacionQR {
+  reservaId: number;
+  codigoReserva: string;
+  nombreJugador: string;
+  telefono: string;
+  fechaReserva: string;
+  horaInicio: string;
+  horaFin: string;
+  numeroPista: number;
+  estado: string;
+  costeEstimado?: number | null;
+}
+
 

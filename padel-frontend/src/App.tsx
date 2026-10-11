@@ -18,6 +18,7 @@ import { PerfilPage } from "./pages/PerfilPage";
 import { InstalacionesPage } from "./pages/InstalacionesPage";
 import { PrivacidadPage } from "./pages/PrivacidadPage";
 import { TerminosPage } from "./pages/TerminosPage";
+import { ValidarQRPage } from "./pages/ValidarQRPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { DemoBanner } from "./components/DemoBanner";
 import { CookieBanner } from "./components/CookieBanner";
@@ -59,6 +60,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <PerfilPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="admin/validar-qr"
+            element={
+              <ProtectedRoute>
+                <ValidarQRPage />
               </ProtectedRoute>
             }
           />

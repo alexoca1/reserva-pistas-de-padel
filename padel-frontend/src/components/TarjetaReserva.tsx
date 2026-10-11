@@ -2,6 +2,7 @@ import type { Reserva } from "../types";
 import { parseFechaLocal, formatearFechaRelativa } from "@/lib/fechas";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { QRCodeSVG } from "qrcode.react";
 
 import { useAuth } from "../context/AuthContext";
 
@@ -55,6 +56,20 @@ export function TarjetaReserva({ reserva, onEditar, onEliminar }: TarjetaReserva
                 </span>
               </div>
             ))}
+          </div>
+        )}
+
+        {reserva.estado !== "CANCELADA" && reserva.codigoReserva && (
+          <div className="flex flex-col items-center gap-1 border-t border-border/40 pt-3">
+            <QRCodeSVG
+              value={reserva.codigoReserva}
+              size={112}
+              level="M"
+              className="rounded-md"
+            />
+            <span className="font-mono text-[10px] text-muted-foreground tracking-wider">
+              {reserva.codigoReserva}
+            </span>
           </div>
         )}
 
