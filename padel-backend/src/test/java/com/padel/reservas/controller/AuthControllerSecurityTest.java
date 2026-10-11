@@ -62,6 +62,9 @@ class AuthControllerSecurityTest {
     @MockitoBean
     private com.padel.reservas.repositories.ReservaRepository reservaRepository;
 
+    @MockitoBean
+    private com.padel.reservas.repositories.PagoRepository pagoRepository;
+
     private final RegisterRequest registerRequest = new RegisterRequest(
             "nuevo.admin@test.com", "Password123", "Nuevo", "Admin", "600000000"
     );

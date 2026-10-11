@@ -162,4 +162,11 @@ export interface ContabilidadResumen {
   tasaCancelacion: number;
 }
 
+export interface EstadisticasUsuario {
+  partidosJugados: number;
+  horasEnPista: number;
+  gastoNeto: number;
+  pistaMasFrecuente?: number | null;
+}
+
 

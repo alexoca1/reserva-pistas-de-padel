@@ -118,7 +118,7 @@ Authorization: Bearer <accessToken>
   por rol dentro de la misma página — replicar este patrón si aparecen
   casos similares, en vez de crear páginas separadas por rol.
 - Para el rol de demostración (`DEMO_ADMIN`, spec 038), `AuthContext` expone `isDemoAdmin: boolean`. Las acciones destructivas o reconfiguraciones de sistema (eliminar reservas, crear/editar/eliminar pistas) ocultan los botones y muestran en su lugar un texto discreto en cursiva: `No disponible en demo`.
-- En `PerfilPage.tsx` se integra la sección *"Privacidad y control de datos"* (RGPD, spec 036): exportación de archivo JSON vía `Blob` descargable en navegador y eliminación irreversible de cuenta protegida por confirmación con palabra clave `"ELIMINAR"`.
+- En `PerfilPage.tsx` se integra la tarjeta *"Mis estadísticas"* (`EstadisticasUsuario` via `perfilService.getEstadisticas`, spec 047) y la sección *"Privacidad y control de datos"* (RGPD, spec 036): exportación de archivo JSON vía `Blob` descargable en navegador y eliminación irreversible de cuenta protegida por confirmación con palabra clave `"ELIMINAR"`.
 
 ## Sistema de diseño
 
@@ -151,9 +151,9 @@ Los tokens de color y radio viven en `src/index.css`, dentro de `:root` y del bl
 
 ### Reglas Ponytail Frontend
 
-- Mantener los tipos de dominio en `src/types/index.ts` (incluyendo `PagoDTO`, `ValidacionQR`, `ContabilidadResumen` [spec 046]).
+- Mantener los tipos de dominio en `src/types/index.ts` (incluyendo `PagoDTO`, `ValidacionQR`, `ContabilidadResumen` [spec 046], `EstadisticasUsuario` [spec 047]).
 - Librerías nuevas permitidas cuando resuelven algo que HTML/CSS/React puro no cubre bien (animación orquestada, gestos...). Cada dependencia nueva en `package.json` necesita una razón concreta, no se añaden "por si acaso": `framer-motion` (animaciones UI), `qrcode.react` (renderizado SVG de QR de acceso por reserva) y `jsqr` (decodificación de códigos QR desde imágenes/canvas en cliente [spec 045]).
-- Usar la instancia centralizada de cliente HTTP en `src/services/api.ts` sin duplicar instancias de `axios`/`fetch` (`reservasService`, `pistasService`, `usuariosService`, `perfilService`, `adminService`). Para descargas de archivos binarios/blob como CSV, `adminService.descargarCSV` usa `getMemoryAccessToken()` directamente.
+- Usar la instancia centralizada de cliente HTTP en `src/services/api.ts` sin duplicar instancias de `axios`/`fetch` (`reservasService`, `pistasService`, `usuariosService`, `perfilService` con `getEstadisticas` [spec 047], `adminService`). Para descargas de archivos binarios/blob como CSV, `adminService.descargarCSV` usa `getMemoryAccessToken()` directamente.
 - No crear nuevos componentes en `src/components/ui` si el caso de uso se resuelve con los existentes (`button`, `input`, `card`).
 - Borrado sobre adición: eliminar código no utilizado antes de escribir nuevas abstracciones.
 

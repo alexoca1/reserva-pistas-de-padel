@@ -70,6 +70,9 @@ class RgpdControllerTest {
     private ReservaRepository reservaRepository;
 
     @MockitoBean
+    private com.padel.reservas.repositories.PagoRepository pagoRepository;
+
+    @MockitoBean
     private CloudinaryService cloudinaryService;
 
     @MockitoBean

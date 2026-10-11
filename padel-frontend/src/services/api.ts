@@ -1,6 +1,7 @@
 import type {
   ContabilidadResumen,
   DisponibilidadDia,
+  EstadisticasUsuario,
   FotoPista,
   FotoSede,
   FranjaOcupada,
@@ -242,6 +243,8 @@ export const perfilService = {
     fetchAPI<void>("/auth/cuenta", {
       method: "DELETE",
     }),
+  getEstadisticas: () =>
+    fetchAPI<EstadisticasUsuario>("/auth/estadisticas"),
 };
 
 export const configuracionService = {

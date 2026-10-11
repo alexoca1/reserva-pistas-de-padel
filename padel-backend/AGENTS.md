@@ -52,6 +52,7 @@ src/main/java/com/padel/reservas/
 |  |- SubidaResult.java
 |  |- ValidacionQRDTO.java
 |  |- ContabilidadDTO.java
+|  |- EstadisticasUsuarioDTO.java
 |- entities/
 |  |- Usuario.java
 |  |- Pista.java
@@ -267,6 +268,15 @@ El backend usa `ContabilidadDTO` (record) para `GET /admin/contabilidad`:
 - `reservasCanceladas: long`
 - `tasaCancelacion: double`
 
+## DTO de Estadísticas del Usuario
+
+El backend usa `EstadisticasUsuarioDTO` (record) para `GET /auth/estadisticas`:
+
+- `partidosJugados: long`
+- `horasEnPista: double`
+- `gastoNeto: BigDecimal`
+- `pistaMasFrecuente: Integer`
+
 ## Endpoints Actuales (Fuente de Verdad)
 
 > Base URL: `http://localhost:8081`
@@ -281,6 +291,7 @@ El backend usa `ContabilidadDTO` (record) para `GET /admin/contabilidad`:
 | POST   | `/auth/register`       | No                     | No                  | Registra usuario estándar                                            |
 | POST   | `/auth/register-admin` | **Sí**                 | **Sí**              | Registra usuario administrador (Solo Administrador)                  |
 | GET    | `/auth/perfil`         | Sí                     | No                  | Devuelve datos del usuario autenticado                               |
+| GET    | `/auth/estadisticas`   | Sí                     | No                  | Devuelve estadísticas personales del usuario (partidos jugados, horas, gasto neto y pista favorita) |
 | GET    | `/auth/test-roles`     | Sí                     | No                  | Endpoint técnico de prueba                                           |
 | GET    | `/auth/usuarios`       | Sí                     | **Sí**              | Lista todos los usuarios sin contraseña — usado por selectores de admin |
 | PUT    | `/auth/perfil`         | Sí                     | No                  | Actualiza nombre, apellidos y teléfono del usuario autenticado; admin puede pasar `usuarioId` para editar a otro |
