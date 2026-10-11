@@ -22,6 +22,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
+
 export function PerfilPage() {
   const { user, isAdmin, actualizarUsuario, logout } = useAuth();
   const { mostrarToast } = useToast();
@@ -184,8 +186,12 @@ export function PerfilPage() {
         setErrorPropio("Debes ingresar tu contraseña actual para cambiarla.");
         return;
       }
-      if (!formPropio.newPassword || formPropio.newPassword.length < 6) {
-        setErrorPropio("La nueva contraseña debe tener al menos 6 caracteres.");
+      if (!formPropio.newPassword || formPropio.newPassword.length < 8) {
+        setErrorPropio("La contraseña debe tener al menos 8 caracteres.");
+        return;
+      }
+      if (!PASSWORD_REGEX.test(formPropio.newPassword)) {
+        setErrorPropio("La contraseña debe contener al menos una mayúscula, una minúscula y un número.");
         return;
       }
       if (formPropio.newPassword !== formPropio.confirmPassword) {
@@ -286,8 +292,12 @@ export function PerfilPage() {
     setErrorJugador("");
 
     if (formJugador.newPassword || formJugador.confirmPassword) {
-      if (formJugador.newPassword.length < 6) {
-        setErrorJugador("La nueva contraseña debe tener al menos 6 caracteres.");
+      if (formJugador.newPassword.length < 8) {
+        setErrorJugador("La contraseña debe tener al menos 8 caracteres.");
+        return;
+      }
+      if (!PASSWORD_REGEX.test(formJugador.newPassword)) {
+        setErrorJugador("La contraseña debe contener al menos una mayúscula, una minúscula y un número.");
         return;
       }
       if (formJugador.newPassword !== formJugador.confirmPassword) {
@@ -582,7 +592,7 @@ export function PerfilPage() {
                             <Input
                               id="my-new-password"
                               type="password"
-                              placeholder="Mínimo 6 caracteres"
+                              placeholder="Mínimo 8 caracteres"
                               value={formPropio.newPassword}
                               onChange={(e) =>
                                 setFormPropio((prev) => ({
@@ -592,6 +602,13 @@ export function PerfilPage() {
                               }
                               required={mostrarCambioPassword}
                             />
+                            {errorPropio && errorPropio.toLowerCase().includes("contraseña") ? (
+                              <p className="text-xs text-destructive">{errorPropio}</p>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">
+                                Mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número
+                              </p>
+                            )}
                           </div>
 
                           <div className="grid gap-2">
@@ -790,7 +807,7 @@ export function PerfilPage() {
                           <Input
                             id="jugador-new-password"
                             type="password"
-                            placeholder="Mínimo 6 caracteres"
+                            placeholder="Mínimo 8 caracteres"
                             value={formJugador.newPassword}
                             onChange={(e) =>
                               setFormJugador((prev) => ({
@@ -799,6 +816,13 @@ export function PerfilPage() {
                               }))
                             }
                           />
+                          {errorJugador && errorJugador.toLowerCase().includes("contraseña") ? (
+                            <p className="text-xs text-destructive">{errorJugador}</p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              Mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número
+                            </p>
+                          )}
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="jugador-confirm-password">Repite la nueva contraseña</Label>

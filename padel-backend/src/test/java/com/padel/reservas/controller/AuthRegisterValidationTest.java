@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.padel.reservas.config.JwtSecretKeyProvider;
 import com.padel.reservas.config.SecurityConfig;
 import com.padel.reservas.dto.RegisterRequest;
+import com.padel.reservas.dto.UpdatePerfilDTO;
 import com.padel.reservas.entities.Usuario;
 import com.padel.reservas.repositories.RefreshTokenRepository;
 import com.padel.reservas.repositories.ReservaRepository;
@@ -22,6 +23,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -31,7 +33,9 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -145,5 +149,99 @@ class AuthRegisterValidationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.message").value("Usuario registrado correctamente"));
+    }
+
+    @Test
+    @DisplayName("PUT /auth/perfil con password 'weak' retorna 400")
+    void perfil_passwordWeak_retorna400() throws Exception {
+        UpdatePerfilDTO dto = new UpdatePerfilDTO(
+                "Juan", "Pérez", "600123456",
+                "valido@test.com",
+                "weak",
+                "OldPassword123",
+                null
+        );
+
+        mockMvc.perform(put("/auth/perfil")
+                        .with(jwt().jwt(j -> j.claim("sub", "valido@test.com"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.password").exists());
+    }
+
+    @Test
+    @DisplayName("PUT /auth/perfil con password 'sinmayuscula1' retorna 400")
+    void perfil_passwordSinMayuscula_retorna400() throws Exception {
+        UpdatePerfilDTO dto = new UpdatePerfilDTO(
+                "Juan", "Pérez", "600123456",
+                "valido@test.com",
+                "sinmayuscula1",
+                "OldPassword123",
+                null
+        );
+
+        mockMvc.perform(put("/auth/perfil")
+                        .with(jwt().jwt(j -> j.claim("sub", "valido@test.com"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.password").exists());
+    }
+
+    @Test
+    @DisplayName("PUT /auth/perfil con password 'SinNumero!' retorna 400")
+    void perfil_passwordSinNumero_retorna400() throws Exception {
+        UpdatePerfilDTO dto = new UpdatePerfilDTO(
+                "Juan", "Pérez", "600123456",
+                "valido@test.com",
+                "SinNumero!",
+                "OldPassword123",
+                null
+        );
+
+        mockMvc.perform(put("/auth/perfil")
+                        .with(jwt().jwt(j -> j.claim("sub", "valido@test.com"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.password").exists());
+    }
+
+    @Test
+    @DisplayName("PUT /auth/perfil con password 'Valida123' retorna 200")
+    void perfil_passwordValida_retorna200() throws Exception {
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setEmail("valido@test.com");
+        usuario.setNombre("Juan");
+        usuario.setApellidos("Pérez");
+        usuario.setTelefono("600123456");
+        usuario.setPassword("encodedOldPassword");
+        usuario.setRoles("ROLE_USER");
+
+        when(usuarioRepository.findByEmail("valido@test.com")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches("OldPassword123", "encodedOldPassword")).thenReturn(true);
+        when(passwordEncoder.encode("Valida123")).thenReturn("encodedNewPassword");
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
+
+        UpdatePerfilDTO dto = new UpdatePerfilDTO(
+                "Juan", "Pérez", "600123456",
+                "valido@test.com",
+                "Valida123",
+                "OldPassword123",
+                null
+        );
+
+        mockMvc.perform(put("/auth/perfil")
+                        .with(jwt().jwt(j -> j.claim("sub", "valido@test.com"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_USER")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1));
     }
 }

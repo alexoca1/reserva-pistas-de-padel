@@ -379,10 +379,6 @@ public class AuthController {
                 }
             }
 
-            if (dto.password().length() < 6) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "La nueva contraseña debe tener al menos 6 caracteres"));
-            }
             usuario.setPassword(passwordEncoder.encode(dto.password()));
         }
 
