@@ -201,10 +201,13 @@ export const reservasService = {
       method: "PUT",
       body: JSON.stringify(datos),
     }),
-  delete: (id: number) =>
+  delete: (id: number, payload?: { aPeticionDelJugador?: boolean }) =>
     fetchAPI<null>(`/reservas/${id}`, {
       method: "DELETE",
+      ...(payload && { body: JSON.stringify(payload) }),
     }),
+  getPagos: (id: number) =>
+    fetchAPI<import("../types").PagoDTO[]>(`/reservas/${id}/pagos`),
 };
 
 export const usuariosService = {

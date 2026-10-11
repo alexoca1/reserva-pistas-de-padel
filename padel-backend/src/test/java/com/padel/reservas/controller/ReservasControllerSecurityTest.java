@@ -19,17 +19,21 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Optional;
+import com.padel.reservas.entities.Usuario;
 
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ReservasController.class)
-@Import({SecurityConfig.class, JwtService.class, JwtSecretKeyProvider.class})
+@EnableAspectJAutoProxy
+@Import({SecurityConfig.class, JwtService.class, JwtSecretKeyProvider.class, com.padel.reservas.config.DemoAdminAspect.class})
 @TestPropertySource(properties = "jwt.secret=dGVzdC1zZWNyZXQta2V5LWZvci11bml0LXRlc3RzLTEyMzQ1Njc4OTAxMjM0NTY=")
 class ReservasControllerSecurityTest {
 
@@ -50,6 +54,12 @@ class ReservasControllerSecurityTest {
 
     @MockitoBean
     private ReservaService reservaService;
+
+    @MockitoBean
+    private com.padel.reservas.repositories.PagoRepository pagoRepository;
+
+    @MockitoBean
+    private com.padel.reservas.services.PagoService pagoService;
 
     @Test
     void getReservas_usuarioNormal_soloDevuelveLasSuyas() throws Exception {
@@ -83,5 +93,24 @@ class ReservasControllerSecurityTest {
                 .andExpect(jsonPath("$.length()").value(2));
 
         verify(reservaRepository, never()).findByUsuarioEmail("admin@test.com");
+    }
+
+    @Test
+    void postReservas_demoAdmin_lanza403() throws Exception {
+        Usuario demoAdmin = new Usuario();
+        demoAdmin.setId(100L);
+        demoAdmin.setEmail("demo@test.com");
+        demoAdmin.setRoles("ROLE_DEMO_ADMIN");
+        demoAdmin.setTipoAdmin(com.padel.reservas.entities.TipoAdmin.DEMO_ADMIN);
+
+        when(usuarioRepository.findByEmail("demo@test.com")).thenReturn(Optional.of(demoAdmin));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/reservas")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"fechaReserva\":\"2026-12-01\",\"horaInicio\":\"10:00\",\"horaFin\":\"11:30\",\"nombreJugador\":\"Ana\",\"telefono\":\"600111222\",\"pistaId\":1}")
+                        .with(jwt()
+                                .jwt(jwtBuilder -> jwtBuilder.subject("demo@test.com"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_DEMO_ADMIN"))))
+                .andExpect(status().isForbidden());
     }
 }

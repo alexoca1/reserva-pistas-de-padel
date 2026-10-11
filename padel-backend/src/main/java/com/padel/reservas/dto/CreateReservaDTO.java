@@ -27,7 +27,9 @@ public record CreateReservaDTO(
         @NotNull
         Long pistaId,
 
-        Long usuarioId
+        Long usuarioId,
+
+        com.padel.reservas.entities.MetodoPago metodoPago
 ) {
     private static final Set<Integer> DURACIONES_VALIDAS_MINUTOS = Set.of(60, 90, 120);
     private static final LocalTime CIERRE = LocalTime.of(23, 0);

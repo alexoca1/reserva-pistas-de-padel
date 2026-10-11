@@ -5,6 +5,7 @@ import type { DisponibilidadDia, Pista, Reserva, ReservaPayload, Usuario, Config
 import { getErrorMessage } from "../types";
 import { obtenerFechaHoyLocal, obtenerFechaISOHoyLocal, parseFechaLocal } from "@/lib/fechas";
 import { sumarMinutos, horaAMinutos, minutosAHora } from "@/lib/franjas";
+import { calcularTramoReembolso } from "@/lib/pagos";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,7 @@ interface ReservaForm {
   nombreJugador: string;
   telefono: string;
   pistaId: string;
+  metodoPago: "TARJETA_SIMULADA" | "BIZUM_SIMULADO" | "";
 }
 
 const initialForm: ReservaForm = {
@@ -42,6 +44,7 @@ const initialForm: ReservaForm = {
   nombreJugador: "",
   telefono: "",
   pistaId: "",
+  metodoPago: "TARJETA_SIMULADA",
 };
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
@@ -87,6 +90,7 @@ export function ReservasPage() {
   const [form, setForm] = useState<ReservaForm>(initialForm);
   const [duracionMinutos, setDuracionMinutos] = useState<number>(90);
   const [usuarioSeleccionadoId, setUsuarioSeleccionadoId] = useState<number | null>(null);
+  const [aPeticionDelJugador, setAPeticionDelJugador] = useState(false);
 
   // auto-apertura diálogo de edición desde navegación (Dashboard)
   const autoOpenRef = useRef(false);
@@ -108,6 +112,7 @@ export function ReservasPage() {
     setReservaEditando(null);
     setReservaEliminando(null);
     setUsuarioSeleccionadoId(null);
+    setAPeticionDelJugador(false);
     setForm(initialForm);
     setError("");
     if (returnTo) {
@@ -272,6 +277,7 @@ export function ReservasPage() {
         horaFin: initHoraFin,
         nombreJugador: nombreAutenticado,
         telefono: user?.telefono || "",
+        metodoPago: "TARJETA_SIMULADA",
       });
     }
     setOpenFormDialog(true);
@@ -302,6 +308,7 @@ export function ReservasPage() {
         nombreJugador: franja.nombreJugador ?? "",
         telefono: userObj?.telefono ?? "",
         pistaId: String(pistaId),
+        metodoPago: "TARJETA_SIMULADA",
       });
     } else {
       setForm({
@@ -311,6 +318,7 @@ export function ReservasPage() {
         nombreJugador: franja.nombreJugador ?? "",
         telefono: user?.telefono || "",
         pistaId: String(pistaId),
+        metodoPago: "TARJETA_SIMULADA",
       });
     }
     setOpenFormDialog(true);
@@ -386,6 +394,7 @@ export function ReservasPage() {
       pista: { id: Number(formConHoraFin.pistaId) },
       usuarioId: titularId,
       usuario: { id: titularId },
+      metodoPago: (form.metodoPago || "TARJETA_SIMULADA") as "TARJETA_SIMULADA" | "BIZUM_SIMULADO",
     };
 
     try {
@@ -420,10 +429,11 @@ export function ReservasPage() {
     if (!reservaEliminando?.id) return;
     try {
       setLoading(true);
-      await reservasService.delete(reservaEliminando.id);
+      await reservasService.delete(reservaEliminando.id, { aPeticionDelJugador });
       mostrarToast("Reserva eliminada");
       setOpenDeleteDialog(false);
       setReservaEliminando(null);
+      setAPeticionDelJugador(false);
       if (returnTo) {
         navigate(returnTo, {
           state: selectedUserIdNav ? { selectedUserId: selectedUserIdNav } : undefined,
@@ -677,6 +687,22 @@ export function ReservasPage() {
               </Select>
             </div>
 
+            {!reservaEditando && (
+              <div className="grid gap-2">
+                <Label htmlFor="metodoPago">Método de pago (Simulado)</Label>
+                <Select
+                  id="metodoPago"
+                  name="metodoPago"
+                  value={form.metodoPago}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="TARJETA_SIMULADA">Tarjeta de crédito / débito</option>
+                  <option value="BIZUM_SIMULADO">Bizum</option>
+                </Select>
+              </div>
+            )}
+
             {/* Coste estimado en tiempo real */}
             <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 flex items-center justify-between text-sm">
               <span className="text-muted-foreground font-medium">Coste estimado:</span>
@@ -732,9 +758,52 @@ export function ReservasPage() {
           <DialogHeader>
             <DialogTitle>Eliminar reserva</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-foreground">
-            ¿Seguro que quieres eliminar esta reserva?
-          </p>
+          
+          <div className="space-y-4">
+            <p className="text-sm text-foreground">
+              ¿Seguro que quieres cancelar esta reserva?
+            </p>
+
+            {reservaEliminando && (
+              <div className="rounded-md border border-border/50 bg-muted/20 p-3 text-sm">
+                <p className="font-medium mb-1">Información de reembolso:</p>
+                {(() => {
+                  // asumiendo 24h default si no lo sabemos
+                  const tramo = calcularTramoReembolso(reservaEliminando, 24);
+                  if (tramo.costeTotal === 0) return <span className="text-muted-foreground">La reserva no tenía coste.</span>;
+                  return (
+                    <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                      <li>Coste original: <strong>{tramo.costeTotal.toFixed(2)} €</strong></li>
+                      <li>Porcentaje a reembolsar: <strong>{tramo.porcentaje}%</strong> (antelación: {Math.floor(tramo.minutosHastaInicio / 60)}h)</li>
+                      <li>Importe a reembolsar: <strong>{tramo.importeReembolso.toFixed(2)} €</strong></li>
+                    </ul>
+                  );
+                })()}
+              </div>
+            )}
+
+            {isAdmin && (
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="aPeticionDelJugador"
+                  className="rounded border-gray-300"
+                  checked={aPeticionDelJugador}
+                  onChange={(e) => setAPeticionDelJugador(e.target.checked)}
+                />
+                <label htmlFor="aPeticionDelJugador" className="text-sm text-foreground font-medium">
+                  Cancelar a petición del jugador (aplicar penalización de tramos)
+                </label>
+              </div>
+            )}
+            
+            {isAdmin && !aPeticionDelJugador && reservaEliminando && (
+              <p className="text-xs text-muted-foreground">
+                * Como admin, si no marcas la casilla, se reembolsará el 100% independientemente de la antelación.
+              </p>
+            )}
+          </div>
+
           <DialogFooter>
             <Button
               type="button"

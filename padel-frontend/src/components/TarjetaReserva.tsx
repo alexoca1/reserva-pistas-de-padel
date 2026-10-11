@@ -42,6 +42,22 @@ export function TarjetaReserva({ reserva, onEditar, onEliminar }: TarjetaReserva
             </span>
           ) : null}
         </div>
+        
+        {reserva.pagos && reserva.pagos.length > 0 && (
+          <div className="mt-2 space-y-1 border-t border-border/50 pt-2 text-xs">
+            {reserva.pagos.map((pago) => (
+              <div key={pago.id} className="flex items-center justify-between">
+                <span className={pago.tipo === "COBRO" ? "text-muted-foreground" : "text-green-600 dark:text-green-400 font-medium"}>
+                  {pago.tipo === "COBRO" ? "Cobro" : "Reembolso"} ({pago.metodo === "TARJETA_SIMULADA" ? "Tarjeta" : "Bizum"})
+                </span>
+                <span className={pago.tipo === "COBRO" ? "font-medium" : "font-medium text-green-600 dark:text-green-400"}>
+                  {pago.tipo === "COBRO" ? "-" : "+"}{Number(pago.importe).toFixed(2)} €
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="flex items-center gap-2 pt-2">
           <Button
             variant="secondary"

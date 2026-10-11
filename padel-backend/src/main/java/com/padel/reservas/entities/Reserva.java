@@ -75,6 +75,9 @@ public class Reserva {
     @OneToMany(mappedBy = "reserva", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FranjaReservada> franjas = new ArrayList<>();
 
+    @OneToMany(mappedBy = "reserva", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Pago> pagos = new ArrayList<>();
+
     @Transient
     public BigDecimal getCosteEstimado() {
         if (pista == null || pista.getPrecioHora() == null || horaInicio == null || horaFin == null) {

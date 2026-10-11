@@ -16,6 +16,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -30,6 +33,7 @@ public class ReservaService {
 
     private final ReservaRepository reservaRepository;
     private final ConfiguracionClubService configuracionClubService;
+    private final PagoService pagoService;
 
     /** Crea una reserva y sus franjas atómicas en una única transacción. */
     @Transactional
@@ -62,6 +66,9 @@ public class ReservaService {
             guardada = reservaRepository.save(guardada);
         }
 
+        com.padel.reservas.entities.MetodoPago metodo = dto.metodoPago() != null ? dto.metodoPago() : com.padel.reservas.entities.MetodoPago.TARJETA_SIMULADA;
+        pagoService.registrarCobro(guardada, metodo);
+
         return guardada;
     }
 
@@ -75,6 +82,23 @@ public class ReservaService {
         validarDuracionYHorario(inicio, fin);
         validarLimitesYSolapamientoUsuario(reserva.getUsuario(), dto.fechaReserva(), reserva.getId(), inicio, fin);
 
+        if (reserva.getPagos().stream().anyMatch(p -> p.getTipo() == com.padel.reservas.entities.TipoPago.COBRO)) {
+            ConfiguracionClub config = configuracionClubService.getConfiguracion();
+            long minutosAntelacion = Duration.between(LocalDateTime.now(), LocalDateTime.of(reserva.getFechaReserva(), reserva.getHoraInicio())).toMinutes();
+            if (minutosAntelacion < config.getHorasCancelacionGratuita() * 60) {
+                throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,
+                        "No se puede modificar una reserva pagada con menos de " + config.getHorasCancelacionGratuita() + " horas de antelación.");
+            }
+        }
+
+        Reserva reservaAntes = new Reserva();
+        reservaAntes.setId(reserva.getId());
+        reservaAntes.setUsuario(reserva.getUsuario());
+        reservaAntes.setCodigoReserva(reserva.getCodigoReserva());
+        reservaAntes.setPista(reserva.getPista());
+        reservaAntes.setHoraInicio(reserva.getHoraInicio());
+        reservaAntes.setHoraFin(reserva.getHoraFin());
+
         reserva.setFechaReserva(dto.fechaReserva());
         reserva.setHoraInicio(inicio);
         reserva.setHoraFin(fin);
@@ -84,7 +108,34 @@ public class ReservaService {
 
         reserva.getFranjas().clear(); // orphanRemoval marca las antiguas para borrado
         aplicarFranjas(reserva, pista);
-        return guardarConTraduccionDeConflicto(reserva);
+        Reserva guardada = guardarConTraduccionDeConflicto(reserva);
+
+        pagoService.registrarAjusteEdicion(reservaAntes, guardada.getCosteEstimado());
+
+        return guardada;
+    }
+
+    @Transactional
+    public BigDecimal cancelar(Reserva reserva, com.padel.reservas.dto.CancelReservaDTO dto, boolean esAdmin) {
+        reserva.setEstado(EstadoReserva.CANCELADA);
+        reserva.setFechaCancelacion(LocalDateTime.now());
+        
+        boolean aplicarTramos = dto != null && dto.aplicarTramos();
+        BigDecimal importe = pagoService.calcularImporteReembolso(reserva, esAdmin, aplicarTramos);
+        
+        com.padel.reservas.entities.MetodoPago metodo = com.padel.reservas.entities.MetodoPago.TARJETA_SIMULADA;
+        if (dto != null && dto.metodoPago() != null) {
+            metodo = dto.metodoPago();
+        } else {
+            com.padel.reservas.entities.Pago cobro = reserva.getPagos().stream()
+                .filter(p -> p.getTipo() == com.padel.reservas.entities.TipoPago.COBRO)
+                .findFirst().orElse(null);
+            if (cobro != null) metodo = cobro.getMetodo();
+        }
+        
+        pagoService.registrarReembolso(reserva, importe, metodo);
+        reservaRepository.save(reserva);
+        return importe;
     }
 
     private void validarEstadoPista(Pista pista) {

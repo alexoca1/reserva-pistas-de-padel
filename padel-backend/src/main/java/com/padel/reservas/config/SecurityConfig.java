@@ -48,8 +48,12 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectProvider<RateLimitFilter> rateLimitFilterProvider) throws Exception {
         BearerTokenResolver defaultResolver = new DefaultBearerTokenResolver();
         BearerTokenResolver customResolver = request -> {
-            if (HttpMethod.GET.matches(request.getMethod()) && (request.getRequestURI().startsWith("/pistas") || request.getRequestURI().startsWith("/sede"))) {
-                return null; // GET /pistas y GET /sede son 100% públicos, no procesar ni validar token JWT
+            if (HttpMethod.GET.matches(request.getMethod()) && (
+                request.getRequestURI().startsWith("/pistas") || 
+                request.getRequestURI().startsWith("/sede") ||
+                request.getRequestURI().startsWith("/reservas/disponibilidad")
+            )) {
+                return null; // GET públicos, no procesar ni validar token JWT
             }
             return defaultResolver.resolve(request);
         };
@@ -62,7 +66,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/login", "/auth/register", "/auth/refresh", "/auth/logout", "/configuracion/duraciones").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/pistas", "/pistas/**", "/sede/fotos").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/pistas", "/pistas/**", "/sede/fotos", "/reservas/disponibilidad", "/reservas/disponibilidad-dia").permitAll()
                         .anyRequest().authenticated()
                 );
 
@@ -129,6 +133,7 @@ public class SecurityConfig {
         configuration.addAllowedOrigin(frontendOrigin);
         configuration.addAllowedHeader("Authorization");
         configuration.addAllowedHeader("Content-Type");
+        configuration.addExposedHeader("X-Reembolso-Importe");
         configuration.addAllowedMethod("GET");
         configuration.addAllowedMethod("POST");
         configuration.addAllowedMethod("PUT");

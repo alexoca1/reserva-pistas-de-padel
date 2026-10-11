@@ -13,7 +13,17 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import com.padel.reservas.entities.Pago;
+import com.padel.reservas.entities.TipoPago;
+import com.padel.reservas.entities.MetodoPago;
+import com.padel.reservas.entities.EstadoReserva;
+import com.padel.reservas.entities.Reserva;
+import com.padel.reservas.repositories.PagoRepository;
 
 /**
  * Seeder de datos de demostración para entornos de desarrollo y pruebas.
@@ -30,17 +40,20 @@ public class DemoDataSeeder implements CommandLineRunner {
     private final UsuarioRepository usuarioRepository;
     private final PistaRepository pistaRepository;
     private final ReservaRepository reservaRepository;
+    private final PagoRepository pagoRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DemoDataSeeder(
             UsuarioRepository usuarioRepository,
             PistaRepository pistaRepository,
             ReservaRepository reservaRepository,
+            PagoRepository pagoRepository,
             PasswordEncoder passwordEncoder
     ) {
         this.usuarioRepository = usuarioRepository;
         this.pistaRepository = pistaRepository;
         this.reservaRepository = reservaRepository;
+        this.pagoRepository = pagoRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -86,7 +99,55 @@ public class DemoDataSeeder implements CommandLineRunner {
         log.info("[DemoDataSeeder] Insertando {} reservas de demostración con franjas atómicas...", plan.reservas().size());
         reservaRepository.saveAll(plan.reservas());
 
-        log.info("[DemoDataSeeder] Siembra completada con éxito: {} usuarios y {} reservas insertadas.",
-                plan.usuarios().size(), plan.reservas().size());
+        // 5. Persistir pagos para la simulación (Spec 044)
+        log.info("[DemoDataSeeder] Insertando pagos simulados para las reservas...");
+        List<Pago> pagos = new ArrayList<>();
+        Random rng = new Random(42L); // Misma semilla
+        
+        for (Reserva reserva : plan.reservas()) {
+            BigDecimal coste = reserva.getCosteEstimado();
+            if (coste == null) coste = BigDecimal.ZERO;
+
+            MetodoPago metodo = rng.nextBoolean() ? MetodoPago.TARJETA_SIMULADA : MetodoPago.BIZUM_SIMULADO;
+            LocalDateTime fechaPago = LocalDateTime.of(reserva.getFechaReserva(), reserva.getHoraInicio())
+                    .minusMinutes(30L + rng.nextInt(1410));
+
+            // Toda reserva tuvo un cobro inicial
+            Pago cobro = Pago.builder()
+                    .reserva(reserva)
+                    .usuario(reserva.getUsuario())
+                    .tipo(TipoPago.COBRO)
+                    .metodo(metodo)
+                    .importe(coste)
+                    .fechaPago(fechaPago)
+                    .concepto("Seed · " + reserva.getCodigoReserva())
+                    .build();
+            pagos.add(cobro);
+
+            // Si está cancelada, simular posible reembolso
+            if (reserva.getEstado() == EstadoReserva.CANCELADA) {
+                int prob = rng.nextInt(100);
+                BigDecimal reembolso = BigDecimal.ZERO;
+                if (prob < 60) reembolso = coste; // 60% completo
+                else if (prob < 85) reembolso = coste.multiply(new BigDecimal("0.50")); // 25% mitad
+                
+                if (reembolso.compareTo(BigDecimal.ZERO) > 0) {
+                    Pago pagoReembolso = Pago.builder()
+                            .reserva(reserva)
+                            .usuario(reserva.getUsuario())
+                            .tipo(TipoPago.REEMBOLSO)
+                            .metodo(metodo)
+                            .importe(reembolso)
+                            .fechaPago(reserva.getFechaCancelacion() != null ? reserva.getFechaCancelacion() : LocalDateTime.now())
+                            .concepto("Reembolso simulado " + reserva.getCodigoReserva())
+                            .build();
+                    pagos.add(pagoReembolso);
+                }
+            }
+        }
+        pagoRepository.saveAll(pagos);
+
+        log.info("[DemoDataSeeder] Siembra completada con éxito: {} usuarios, {} reservas y {} pagos insertados.",
+                plan.usuarios().size(), plan.reservas().size(), pagos.size());
     }
 }

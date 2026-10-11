@@ -16,8 +16,10 @@ La aplicación permite:
 - Registro e inicio de sesión de usuarios.
 - Gestión de perfil autenticado.
 - Consulta pública de pistas de pádel disponibles (con o sin inicio de sesión).
-- Creación, edición y eliminación de reservas.
+- Creación, edición y eliminación de reservas (con registro de **pagos simulados**).
 - Control por roles (`ROLE_ADMIN` y `ROLE_USER`) para proteger operaciones sensibles.
+
+> ⚠️ **Aviso legal de Pagos:** Este sistema de pagos es una **simulación con fines demostrativos**. No se realiza ningún cargo económico real a través de tarjetas o sistemas reales de pago. Todos los pagos, importes, cobros y reembolsos generados por la aplicación son ficticios.
 
 Puertos y base de datos del entorno local:
 
@@ -272,6 +274,7 @@ padel-frontend/
 | `POST`   | `/reservas`                               | Sí                       | No                    | Creación atómica de reserva |
 | `PUT`    | `/reservas/:id`                           | Sí                       | No                    | Modificación de reserva |
 | `DELETE` | `/reservas/:id`                           | Sí                       | No                    | Cancelación de reserva |
+| `GET`    | `/reservas/:id/pagos`                     | Sí                       | No                    | Historial de pagos simulados |
 | `DELETE` | `/reservas`                               | Sí                       | Sí                    | Eliminación masiva |
 | `GET`    | `/admin/configuracion`                    | Sí                       | Sí                    | Consulta de configuración global del club (horarios, duraciones) |
 | `PUT`    | `/admin/configuracion`                    | Sí                       | Sí                    | Modificación de configuración del club |

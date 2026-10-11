@@ -24,20 +24,21 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+import com.padel.reservas.dto.CancelReservaDTO;
+import com.padel.reservas.dto.PagoDTO;
+import com.padel.reservas.services.PagoService;
+import com.padel.reservas.repositories.PagoRepository;
+
 @RestController
+@RequiredArgsConstructor
 public class ReservasController {
 
-    @Autowired
-    private ReservaRepository reservaRepository;
-
-    @Autowired
-    private PistaRepository pistaRepository;
-
-    @Autowired
-    private UsuarioRepository usuarioRepository;
-
-    @Autowired
-    private ReservaService reservaService;
+    private final ReservaRepository reservaRepository;
+    private final PistaRepository pistaRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final ReservaService reservaService;
+    private final PagoRepository pagoRepository;
 
     @GetMapping("/reservas")
     public ResponseEntity<List<Reserva>> findAllReservas(Authentication authentication) {
@@ -101,6 +102,7 @@ public class ReservasController {
     }
 
     @PostMapping("/reservas")
+    @com.padel.reservas.config.NoDemoAdmin
     public ResponseEntity<?> createReserva(@Valid @RequestBody CreateReservaDTO dto, Authentication authentication) {
         Optional<Pista> pista = pistaRepository.findById(dto.pistaId());
         if (pista.isEmpty()) {
@@ -149,19 +151,42 @@ public class ReservasController {
 
     @DeleteMapping("/reservas/{id}")
     @com.padel.reservas.config.NoDemoAdmin
-    public ResponseEntity<Object> deleteReserva(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<Object> deleteReserva(@PathVariable Long id, @RequestBody(required = false) CancelReservaDTO dto, Authentication authentication) {
         Optional<Reserva> reserva = isAdmin(authentication)
                 ? reservaRepository.findById(id)
                 : reservaRepository.findByIdAndUsuarioEmail(id, authentication.getName());
 
         return reserva
                 .map(r -> {
-                    r.setEstado(EstadoReserva.CANCELADA);
-                    r.setFechaCancelacion(java.time.LocalDateTime.now());
-                    reservaRepository.save(r);
-                    return ResponseEntity.noContent().build();
+                    java.math.BigDecimal importe = reservaService.cancelar(r, dto, isAdmin(authentication));
+                    return ResponseEntity.noContent()
+                            .header("X-Reembolso-Importe", importe.toString())
+                            .build();
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/reservas/{id}/pagos")
+    public ResponseEntity<List<PagoDTO>> getPagosReserva(@PathVariable Long id, Authentication authentication) {
+        Optional<Reserva> reserva = isAdmin(authentication)
+                ? reservaRepository.findById(id)
+                : reservaRepository.findByIdAndUsuarioEmail(id, authentication.getName());
+
+        if (reserva.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        List<PagoDTO> pagosDto = pagoRepository.findByReservaId(id).stream()
+                .map(p -> new PagoDTO(
+                        p.getId(),
+                        p.getTipo().name(),
+                        p.getMetodo().name(),
+                        p.getImporte(),
+                        p.getFechaPago().toString(),
+                        p.getConcepto()
+                )).toList();
+
+        return ResponseEntity.ok(pagosDto);
     }
 
     @DeleteMapping("/reservas")

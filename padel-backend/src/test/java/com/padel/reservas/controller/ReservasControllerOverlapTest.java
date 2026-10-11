@@ -57,6 +57,12 @@ class ReservasControllerOverlapTest {
     @MockitoBean
     private ReservaService reservaService;
 
+    @MockitoBean
+    private com.padel.reservas.repositories.PagoRepository pagoRepository;
+
+    @MockitoBean
+    private com.padel.reservas.services.PagoService pagoService;
+
     private final String cuerpoReserva = """
             {
               "fechaReserva": "2026-12-01",

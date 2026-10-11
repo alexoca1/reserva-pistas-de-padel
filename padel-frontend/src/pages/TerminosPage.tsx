@@ -127,14 +127,35 @@ export function TerminosPage() {
           </CardContent>
         </Card>
 
-        {/* 4. Normas de uso e instalaciones */}
+        {/* 4. Pagos Simulados */}
+        <Card className="backdrop-blur-xl bg-card/60 border-white/10">
+          <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <IconCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">4. Pagos Simulados</CardTitle>
+              <p className="text-xs text-muted-foreground">Condiciones sobre el sistema de pagos (Spec 044)</p>
+            </div>
+          </CardHeader>
+          <CardContent className="text-sm leading-relaxed text-muted-foreground space-y-2">
+            <p>
+              Todos los cobros y reembolsos procesados en esta plataforma son <strong className="text-foreground">puramente simulados</strong> y no implican transacciones financieras reales.
+            </p>
+            <p>
+              El cálculo de reembolsos ante cancelaciones se rige por un sistema de tramos basado en la antelación: devolución del 100% si se cancela con margen amplio, y 50% u otros porcentajes según se acerque la hora de inicio, pudiendo llegar al 0% sin previo aviso o cancelación tardía.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* 5. Normas de uso e instalaciones */}
         <Card className="backdrop-blur-xl bg-card/60 border-white/10">
           <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <IconMapPin className="h-5 w-5" />
             </div>
             <div>
-              <CardTitle className="text-lg">4. Normas de Instalaciones y Responsabilidad</CardTitle>
+              <CardTitle className="text-lg">5. Normas de Instalaciones y Responsabilidad</CardTitle>
               <p className="text-xs text-muted-foreground">Seguridad, calzado y causas meteorológicas</p>
             </div>
           </CardHeader>
@@ -148,14 +169,14 @@ export function TerminosPage() {
           </CardContent>
         </Card>
 
-        {/* 5. Ley aplicable y fuero */}
+        {/* 6. Ley aplicable y fuero */}
         <Card className="backdrop-blur-xl bg-card/60 border-white/10">
           <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <IconShield className="h-5 w-5" />
             </div>
             <div>
-              <CardTitle className="text-lg">5. Ley Aplicable y Jurisdicción</CardTitle>
+              <CardTitle className="text-lg">6. Ley Aplicable y Jurisdicción</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="text-xs sm:text-sm leading-relaxed text-muted-foreground space-y-2">
