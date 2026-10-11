@@ -26,8 +26,8 @@ public class DataInitializer {
             com.padel.reservas.repositories.PistaRepository pistaRepository,
             com.padel.reservas.repositories.FotoPistaRepository fotoPistaRepository,
             PasswordEncoder passwordEncoder,
-            @Value("${ADMIN_SEED_PASSWORD:admin123}") String adminSeedPassword,
-            @Value("${DEMO_ADMIN_SEED_PASSWORD:Demo2026!}") String demoAdminSeedPassword
+            @Value("${ADMIN_SEED_PASSWORD}") String adminSeedPassword,
+            @Value("${DEMO_ADMIN_SEED_PASSWORD}") String demoAdminSeedPassword
     ) {
         this.usuarioRepository = usuarioRepository;
         this.configuracionClubRepository = configuracionClubRepository;
