@@ -70,6 +70,9 @@ class AuthPerfilEmailPasswordTest {
     @MockitoBean
     private com.padel.reservas.repositories.ReservaRepository reservaRepository;
 
+    @MockitoBean
+    private com.padel.reservas.repositories.PagoRepository pagoRepository;
+
     private Usuario usuarioNormal;
     private Usuario usuarioOtro;
 

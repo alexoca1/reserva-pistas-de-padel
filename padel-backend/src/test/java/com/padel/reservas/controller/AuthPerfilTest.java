@@ -24,12 +24,15 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import org.springframework.security.test.context.support.WithMockUser;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -70,6 +73,9 @@ class AuthPerfilTest {
 
     @MockitoBean
     private SecurityAuditService securityAuditService;
+
+    @MockitoBean
+    private com.padel.reservas.repositories.PagoRepository pagoRepository;
 
     private Usuario usuarioNormal;
     private Usuario usuarioOtro;
@@ -163,5 +169,26 @@ class AuthPerfilTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Usuario con ID 999 no encontrado"));
+    }
+
+    @Test
+    void getEstadisticas_sinToken_retorna401() throws Exception {
+        mockMvc.perform(get("/auth/estadisticas"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "user@test.com", roles = {"USER"})
+    void getEstadisticas_autenticado_retorna200() throws Exception {
+        when(usuarioRepository.findByEmail("user@test.com")).thenReturn(Optional.of(usuarioNormal));
+        when(reservaRepository.findByUsuarioEmail("user@test.com")).thenReturn(Collections.emptyList());
+        when(pagoRepository.findByUsuarioId(1L)).thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/auth/estadisticas")
+                        .with(jwt().jwt(j -> j.claim("sub", "user@test.com")).authorities(new SimpleGrantedAuthority("ROLE_USER"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.partidosJugados").exists())
+                .andExpect(jsonPath("$.horasEnPista").exists())
+                .andExpect(jsonPath("$.gastoNeto").exists());
     }
 }

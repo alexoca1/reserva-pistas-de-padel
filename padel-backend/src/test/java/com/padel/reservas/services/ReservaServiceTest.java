@@ -16,6 +16,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,14 +27,16 @@ class ReservaServiceTest {
 
     @Mock private ReservaRepository reservaRepository;
     @Mock private ConfiguracionClubService configuracionClubService;
+    @Mock private PagoService pagoService;
     private ReservaService reservaService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
         ConfiguracionClub config = new ConfiguracionClub();
-        when(configuracionClubService.getConfiguracion()).thenReturn(config);
-        reservaService = new ReservaService(reservaRepository, configuracionClubService);
+        config.setHorasCancelacionGratuita(24);
+        lenient().when(configuracionClubService.getConfiguracion()).thenReturn(config);
+        reservaService = new ReservaService(reservaRepository, configuracionClubService, pagoService);
     }
 
     @Test
@@ -46,7 +49,7 @@ class ReservaServiceTest {
         when(reservaRepository.save(any(Reserva.class))).thenAnswer(inv -> inv.getArgument(0));
 
         CreateReservaDTO dto = new CreateReservaDTO(
-                LocalDate.of(2026, 12, 1), "10:00", "11:30", "Ana", "600111222", 1L, null);
+                LocalDate.of(2026, 12, 1), "10:00", "11:30", "Ana", "600111222", 1L, null, null);
         Reserva resultado = reservaService.crear(dto, new Pista(), new Usuario());
 
         assertEquals(3, resultado.getFranjas().size());
@@ -63,7 +66,7 @@ class ReservaServiceTest {
                 .thenThrow(new DataIntegrityViolationException("uk_pista_fecha_slot"));
 
         CreateReservaDTO dto = new CreateReservaDTO(
-                LocalDate.of(2026, 12, 1), "10:00", "11:00", "Ana", "600111222", 1L, null);
+                LocalDate.of(2026, 12, 1), "10:00", "11:00", "Ana", "600111222", 1L, null, null);
 
         assertThrows(ReservaSolapadaException.class,
                 () -> reservaService.crear(dto, new Pista(), new Usuario()));
@@ -72,7 +75,7 @@ class ReservaServiceTest {
     @Test
     void crear_reserva120MinutosEmpezandoDemasiadoTarde_esRechazada() {
         CreateReservaDTO dto = new CreateReservaDTO(
-                LocalDate.of(2026, 12, 1), "21:30", "23:30", "Ana", "600111222", 1L, null);
+                LocalDate.of(2026, 12, 1), "21:30", "23:30", "Ana", "600111222", 1L, null, null);
 
         assertThrows(IllegalArgumentException.class,
                 () -> reservaService.crear(dto, new Pista(), new Usuario()));
@@ -94,7 +97,7 @@ class ReservaServiceTest {
                 .thenReturn(List.of(previa));
 
         CreateReservaDTO dto90 = new CreateReservaDTO(
-                fecha, "14:00", "15:30", "Ana", "600111222", 1L, null); // 90 min -> total 150 min > 120 min
+                fecha, "14:00", "15:30", "Ana", "600111222", 1L, null, null); // 90 min -> total 150 min > 120 min
 
         assertThrows(IllegalArgumentException.class,
                 () -> reservaService.crear(dto90, new Pista(), usuario));
@@ -116,7 +119,7 @@ class ReservaServiceTest {
                 .thenReturn(List.of(previa));
 
         CreateReservaDTO dtoMismaFranja = new CreateReservaDTO(
-                fecha, "18:00", "19:00", "Ana", "600111222", 2L, null); // Intentar 60 min en Pista 2 mismo horario
+                fecha, "18:00", "19:00", "Ana", "600111222", 2L, null, null); // Intentar 60 min en Pista 2 mismo horario
 
         assertThrows(ReservaSolapadaException.class,
                 () -> reservaService.crear(dtoMismaFranja, new Pista(), usuario));
@@ -129,7 +132,7 @@ class ReservaServiceTest {
         when(configuracionClubService.getConfiguracion()).thenReturn(configRestrictiva);
 
         CreateReservaDTO dto90 = new CreateReservaDTO(
-                LocalDate.of(2026, 12, 1), "10:00", "11:30", "Ana", "600111222", 1L, null);
+                LocalDate.of(2026, 12, 1), "10:00", "11:30", "Ana", "600111222", 1L, null, null);
 
         assertThrows(IllegalArgumentException.class,
                 () -> reservaService.crear(dto90, new Pista(), new Usuario()));
@@ -142,7 +145,7 @@ class ReservaServiceTest {
         when(configuracionClubService.getConfiguracion()).thenReturn(configTemprana);
 
         CreateReservaDTO dto = new CreateReservaDTO(
-                LocalDate.of(2026, 12, 1), "21:30", "22:30", "Ana", "600111222", 1L, null);
+                LocalDate.of(2026, 12, 1), "21:30", "22:30", "Ana", "600111222", 1L, null, null);
 
         assertThrows(IllegalArgumentException.class,
                 () -> reservaService.crear(dto, new Pista(), new Usuario()));
@@ -165,7 +168,7 @@ class ReservaServiceTest {
         reservaExistente.setPista(pista);
 
         CreateReservaDTO dtoActualizado = new CreateReservaDTO(
-                LocalDate.of(2026, 12, 1), "10:00", "11:30", "Ana", "600111222", 1L, null); // 90 min
+                LocalDate.of(2026, 12, 1), "10:00", "11:30", "Ana", "600111222", 1L, null, null); // 90 min
 
         Reserva resultado = reservaService.actualizar(reservaExistente, dtoActualizado, pista);
 
@@ -181,7 +184,7 @@ class ReservaServiceTest {
         pistaMantenimiento.setEstado(com.padel.reservas.entities.EstadoPista.MANTENIMIENTO);
 
         CreateReservaDTO dto = new CreateReservaDTO(
-                LocalDate.of(2026, 12, 1), "10:00", "11:30", "Ana", "600111222", 2L, null);
+                LocalDate.of(2026, 12, 1), "10:00", "11:30", "Ana", "600111222", 2L, null, null);
 
         assertThrows(com.padel.reservas.exception.PistaEnMantenimientoException.class,
                 () -> reservaService.crear(dto, pistaMantenimiento, new Usuario()));
@@ -197,9 +200,42 @@ class ReservaServiceTest {
         reservaExistente.setId(1L);
 
         CreateReservaDTO dto = new CreateReservaDTO(
-                LocalDate.of(2026, 12, 1), "10:00", "11:30", "Ana", "600111222", 2L, null);
+                LocalDate.of(2026, 12, 1), "10:00", "11:30", "Ana", "600111222", 2L, null, null);
 
         assertThrows(com.padel.reservas.exception.PistaEnMantenimientoException.class,
                 () -> reservaService.actualizar(reservaExistente, dto, pistaMantenimiento));
+    }
+
+    @Test
+    void cancelar_masDe24h_reembolsoCompleto() {
+        Reserva r = new Reserva();
+        r.setId(1L);
+        r.setEstado(EstadoReserva.CONFIRMADA);
+        when(pagoService.calcularImporteReembolso(r, false, true)).thenReturn(new BigDecimal("10.00"));
+
+        BigDecimal reembolso = reservaService.cancelar(r, new com.padel.reservas.dto.CancelReservaDTO(null, true), false);
+
+        assertEquals(new BigDecimal("10.00"), reembolso);
+        assertEquals(EstadoReserva.CANCELADA, r.getEstado());
+        verify(pagoService).registrarReembolso(eq(r), eq(new BigDecimal("10.00")), any());
+        verify(reservaRepository).save(r);
+    }
+
+    @Test
+    void actualizar_conCobroYMenosDe24h_lanzaException() {
+        Reserva r = new Reserva();
+        r.setId(1L);
+        r.setFechaReserva(LocalDate.now());
+        r.setHoraInicio(LocalTime.now().plusHours(10));
+        r.setUsuario(new Usuario());
+        
+        com.padel.reservas.entities.Pago cobro = new com.padel.reservas.entities.Pago();
+        cobro.setTipo(com.padel.reservas.entities.TipoPago.COBRO);
+        r.setPagos(List.of(cobro));
+
+        CreateReservaDTO dto = new CreateReservaDTO(LocalDate.now(), "10:00", "11:30", "Ana", "600111222", 1L, null, null);
+
+        assertThrows(org.springframework.web.server.ResponseStatusException.class, 
+            () -> reservaService.actualizar(r, dto, new Pista()));
     }
 }

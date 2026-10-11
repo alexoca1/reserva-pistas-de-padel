@@ -61,6 +61,8 @@ export interface Reserva {
   numeroPista?: number;
   usuario?: Pick<Usuario, "id"> & Partial<Usuario>;
   usuarioId?: number;
+  metodoPago?: "TARJETA_SIMULADA" | "BIZUM_SIMULADO";
+  pagos?: import("../types").PagoDTO[];
 }
 
 export interface ReservaPayload {
@@ -74,6 +76,7 @@ export interface ReservaPayload {
   pista: { id: number };
   usuarioId: number;
   usuario: { id: number };
+  metodoPago?: "TARJETA_SIMULADA" | "BIZUM_SIMULADO";
 }
 
 export function getErrorMessage(error: unknown, fallback: string): string {
@@ -126,6 +129,44 @@ export interface FotoSede {
   url: string;
   publicId: string;
   orden: number;
+}
+
+export interface PagoDTO {
+  id: number;
+  tipo: "COBRO" | "REEMBOLSO";
+  metodo: "TARJETA_SIMULADA" | "BIZUM_SIMULADO";
+  importe: number;
+  fechaPago: string;
+  concepto: string;
+}
+
+export interface ValidacionQR {
+  reservaId: number;
+  codigoReserva: string;
+  nombreJugador: string;
+  telefono: string;
+  fechaReserva: string;
+  horaInicio: string;
+  horaFin: string;
+  numeroPista: number;
+  estado: string;
+  costeEstimado?: number | null;
+}
+
+export interface ContabilidadResumen {
+  ingresosBrutos: number;
+  reembolsosEmitidos: number;
+  ingresosNetos: number;
+  reservasConfirmadas: number;
+  reservasCanceladas: number;
+  tasaCancelacion: number;
+}
+
+export interface EstadisticasUsuario {
+  partidosJugados: number;
+  horasEnPista: number;
+  gastoNeto: number;
+  pistaMasFrecuente?: number | null;
 }
 
 

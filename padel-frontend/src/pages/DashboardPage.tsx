@@ -6,6 +6,7 @@ import { reservasService, usuariosService } from "../services/api";
 import type { Reserva, Usuario } from "../types";
 import { getErrorMessage, getReservaUsuarioId } from "../types";
 import { obtenerFechaHoyLocal, parseFechaLocal } from "@/lib/fechas";
+import { calcularTramoReembolso } from "@/lib/pagos";
 import { motion } from "framer-motion";
 import { fadeUp, staggerContainer } from "@/lib/motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,6 +53,7 @@ export function DashboardPage() {
   const [reservaEliminando, setReservaEliminando] = useState<Reserva | null>(null);
   const [errorDelete, setErrorDelete] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [aPeticionDelJugador, setAPeticionDelJugador] = useState(false);
 
   // Carga de usuarios para admin
   useEffect(() => {
@@ -216,6 +218,7 @@ export function DashboardPage() {
   const handleSolicitarEliminar = (reserva: Reserva) => {
     setReservaEliminando(reserva);
     setErrorDelete("");
+    setAPeticionDelJugador(false);
     setOpenDeleteDialog(true);
   };
 
@@ -224,10 +227,11 @@ export function DashboardPage() {
     try {
       setDeleting(true);
       setErrorDelete("");
-      await reservasService.delete(reservaEliminando.id);
+      await reservasService.delete(reservaEliminando.id, { aPeticionDelJugador });
       mostrarToast("Reserva eliminada");
       setOpenDeleteDialog(false);
       setReservaEliminando(null);
+      setAPeticionDelJugador(false);
       await cargarProximasReservas();
     } catch (e) {
       setErrorDelete(getErrorMessage(e, "Error al eliminar reserva"));
@@ -249,7 +253,7 @@ export function DashboardPage() {
         </Card>
       </motion.div>
 
-      {/* Grid de navegación (2 columnas) */}
+      {/* Grid de navegación */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <motion.div variants={fadeUp}>
           <Card className="h-full">
@@ -282,6 +286,45 @@ export function DashboardPage() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {isAdmin && (
+          <>
+            <motion.div variants={fadeUp}>
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-xl">Validar QR</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-muted-foreground">
+                    Escanea o introduce el código de reserva para validar el acceso a pista.
+                  </p>
+                  <Button onClick={() => navigate("/admin/validar-qr")} className="w-full sm:w-auto">
+                    Abrir validador
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div variants={fadeUp}>
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-xl">Contabilidad</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-muted-foreground">
+                    Ingresos, reembolsos y tasa de cancelación del club.
+                  </p>
+                  <Button
+                    onClick={() => navigate("/admin/contabilidad")}
+                    className="w-full sm:w-auto"
+                  >
+                    Ver contabilidad
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </>
+        )}
       </div>
 
       {/* Sección de ancho completo de Próximas Reservas */}
@@ -379,9 +422,49 @@ export function DashboardPage() {
             </p>
           ) : null}
 
-          <p className="text-sm text-foreground">
-            ¿Seguro que quieres eliminar esta reserva?
-          </p>
+          <div className="space-y-4">
+            <p className="text-sm text-foreground">
+              ¿Seguro que quieres cancelar esta reserva?
+            </p>
+
+            {reservaEliminando && (
+              <div className="rounded-md border border-border/50 bg-muted/20 p-3 text-sm">
+                <p className="font-medium mb-1">Información de reembolso:</p>
+                {(() => {
+                  const tramo = calcularTramoReembolso(reservaEliminando, 24);
+                  if (tramo.costeTotal === 0) return <span className="text-muted-foreground">La reserva no tenía coste.</span>;
+                  return (
+                    <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                      <li>Coste original: <strong>{tramo.costeTotal.toFixed(2)} €</strong></li>
+                      <li>Porcentaje a reembolsar: <strong>{tramo.porcentaje}%</strong> (antelación: {Math.floor(tramo.minutosHastaInicio / 60)}h)</li>
+                      <li>Importe a reembolsar: <strong>{tramo.importeReembolso.toFixed(2)} €</strong></li>
+                    </ul>
+                  );
+                })()}
+              </div>
+            )}
+
+            {isAdmin && (
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="aPeticionDelJugadorDashboard"
+                  className="rounded border-gray-300"
+                  checked={aPeticionDelJugador}
+                  onChange={(e) => setAPeticionDelJugador(e.target.checked)}
+                />
+                <label htmlFor="aPeticionDelJugadorDashboard" className="text-sm text-foreground font-medium">
+                  Cancelar a petición del jugador (aplicar penalización de tramos)
+                </label>
+              </div>
+            )}
+            
+            {isAdmin && !aPeticionDelJugador && reservaEliminando && (
+              <p className="text-xs text-muted-foreground">
+                * Como admin, si no marcas la casilla, se reembolsará el 100% independientemente de la antelación.
+              </p>
+            )}
+          </div>
 
           <DialogFooter>
             <Button

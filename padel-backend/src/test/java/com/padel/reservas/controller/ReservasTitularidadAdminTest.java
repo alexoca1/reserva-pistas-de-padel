@@ -60,6 +60,12 @@ class ReservasTitularidadAdminTest {
     @MockitoBean
     private ReservaService reservaService;
 
+    @MockitoBean
+    private com.padel.reservas.repositories.PagoRepository pagoRepository;
+
+    @MockitoBean
+    private com.padel.reservas.services.PagoService pagoService;
+
     private Pista pista;
     private Usuario admin;
     private Usuario jugadorAna;
@@ -86,6 +92,9 @@ class ReservasTitularidadAdminTest {
         when(usuarioRepository.findByEmail("admin@padel.com")).thenReturn(Optional.of(admin));
         when(usuarioRepository.findByEmail("ana@jugador.com")).thenReturn(Optional.of(jugadorAna));
         when(usuarioRepository.findById(5L)).thenReturn(Optional.of(jugadorAna));
+
+        org.mockito.Mockito.lenient().when(reservaService.cancelar(any(), any(), any(Boolean.class)))
+                .thenReturn(java.math.BigDecimal.ZERO);
 
         when(reservaService.crear(any(), any(), any())).thenAnswer(invocation -> {
             CreateReservaDTO dto = invocation.getArgument(0);
@@ -227,13 +236,7 @@ class ReservasTitularidadAdminTest {
                                 .authorities(new SimpleGrantedAuthority("ROLE_USER"))))
                 .andExpect(status().isNoContent());
 
-        ArgumentCaptor<Reserva> captor = ArgumentCaptor.forClass(Reserva.class);
-        verify(reservaRepository).save(captor.capture());
-        verify(reservaRepository, never()).deleteById(any());
-        verify(reservaRepository, never()).delete(any());
-
-        assertThat(captor.getValue().getEstado()).isEqualTo(EstadoReserva.CANCELADA);
-        assertThat(captor.getValue().getFechaCancelacion()).isNotNull();
+        verify(reservaService).cancelar(reserva, null, false);
     }
 
     @Test
@@ -250,12 +253,6 @@ class ReservasTitularidadAdminTest {
                                 .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
                 .andExpect(status().isNoContent());
 
-        ArgumentCaptor<Reserva> captor = ArgumentCaptor.forClass(Reserva.class);
-        verify(reservaRepository).save(captor.capture());
-        verify(reservaRepository, never()).deleteById(any());
-        verify(reservaRepository, never()).delete(any());
-
-        assertThat(captor.getValue().getEstado()).isEqualTo(EstadoReserva.CANCELADA);
-        assertThat(captor.getValue().getFechaCancelacion()).isNotNull();
+        verify(reservaService).cancelar(reserva, null, true);
     }
 }

@@ -68,6 +68,9 @@ class AuthPerfilAvatarTest {
     @MockitoBean
     private com.padel.reservas.repositories.ReservaRepository reservaRepository;
 
+    @MockitoBean
+    private com.padel.reservas.repositories.PagoRepository pagoRepository;
+
     private Usuario usuario;
 
     @BeforeEach

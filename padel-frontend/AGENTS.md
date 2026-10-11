@@ -118,7 +118,7 @@ Authorization: Bearer <accessToken>
   por rol dentro de la misma página — replicar este patrón si aparecen
   casos similares, en vez de crear páginas separadas por rol.
 - Para el rol de demostración (`DEMO_ADMIN`, spec 038), `AuthContext` expone `isDemoAdmin: boolean`. Las acciones destructivas o reconfiguraciones de sistema (eliminar reservas, crear/editar/eliminar pistas) ocultan los botones y muestran en su lugar un texto discreto en cursiva: `No disponible en demo`.
-- En `PerfilPage.tsx` se integra la sección *"Privacidad y control de datos"* (RGPD, spec 036): exportación de archivo JSON vía `Blob` descargable en navegador y eliminación irreversible de cuenta protegida por confirmación con palabra clave `"ELIMINAR"`.
+- En `PerfilPage.tsx` se integra la tarjeta *"Mis estadísticas"* (`EstadisticasUsuario` via `perfilService.getEstadisticas`, spec 047) y la sección *"Privacidad y control de datos"* (RGPD, spec 036): exportación de archivo JSON vía `Blob` descargable en navegador y eliminación irreversible de cuenta protegida por confirmación con palabra clave `"ELIMINAR"`.
 
 ## Sistema de diseño
 
@@ -136,7 +136,7 @@ Los tokens de color y radio viven en `src/index.css`, dentro de `:root` y del bl
 - `color-scheme: dark` en `:root` (`index.css`) para que los controles nativos (popup de `select`, selector de fecha, scrollbars) se dibujen en oscuro. Las `<option>` llevan color explícito con los tokens (`--card`, `--foreground`) porque el popup nativo no respeta transparencia ni `backdrop-blur`.
 - Efecto de inclinación 3D: `src/components/TiltCard.tsx`, envuelve cualquier tarjeta para que rote según la posición del cursor, con brillo que la sigue. Usa Motion, que ya está instalado. Se desactiva solo si el usuario tiene `prefers-reduced-motion` activado. El foco de luz que sigue al cursor en el hero de `HomePage` usa la misma idea (`useMotionValue` + `useMotionTemplate`) sin componente propio, es específico de esa página.
 - Escena 3D del hero: `src/components/HeroScene.tsx`, tres esferas con `MeshDistortMaterial` (React Three Fiber + drei) flotando detrás de la foto. Se carga con `lazy()` en `HomePage.tsx` para no meter el peso de Three.js en el resto de páginas. Se oculta si el usuario tiene `prefers-reduced-motion` activado, y por debajo de `sm` (poco margen alrededor de la foto).
-- `src/components/TarjetaReserva.tsx`: componente presentacional para tarjetas de reserva individuales (pista, fecha relativa, horario, botones de edición y eliminación). Usado en la sección de próximas reservas del Dashboard.
+- `src/components/TarjetaReserva.tsx`: componente presentacional para tarjetas de reserva individuales (pista, fecha relativa, horario, movimientos de pagos, código QR SVG con `qrcode.react` [spec 045], botones de edición y eliminación). Usado en la sección de próximas reservas del Dashboard.
 - `src/components/LightboxGaleria.tsx`: visor de galería de fotos a pantalla completa (lightbox) con navegación prev/next, soporte de teclado (flechas y Escape), trampa y restauración de foco accesible.
 - `src/components/Avatar.tsx`: avatar de usuario (foto redondeada si dispone de `avatarUrl` o círculo con iniciales y color determinista derivado del `id`). Prop `size` configurable. Usado en `Navbar` y `PerfilPage`.
 - `src/components/BuscadorJugador.tsx`: combobox accesible de búsqueda de usuario por nombre o teléfono. Componente estándar para cualquier selector de jugador en contextos de admin — reemplaza `<Select>` nativo en DashboardPage, ReservasPage y PerfilPage. Props: `usuarios`, `value` (id | null), `onChange`, `id`.
@@ -151,10 +151,10 @@ Los tokens de color y radio viven en `src/index.css`, dentro de `:root` y del bl
 
 ### Reglas Ponytail Frontend
 
-- Priorizar componentes nativos de HTML5 (ej. `<input type="date">` o `<input type="color">`) sobre librerías de componentes externas para formularios e inputs.
-- Librerías nuevas permitidas cuando resuelven algo que HTML/CSS/React puro no cubre bien (animación orquestada, gestos...). Cada dependencia nueva en `package.json` necesita una razón concreta, no se añaden "por si acaso". Primera hasta ahora: `framer-motion`, para las animaciones de la home.
-- Usar la instancia centralizada de cliente HTTP en `src/services/api.js`[cite: 3] sin duplicar instancias de `axios`/`fetch`.
-- No crear nuevos componentes en `src/components/ui`[cite: 3] si el caso de uso se resuelve con los existentes (`button`, `input`, `card`)[cite: 3].
+- Mantener los tipos de dominio en `src/types/index.ts` (incluyendo `PagoDTO`, `ValidacionQR`, `ContabilidadResumen` [spec 046], `EstadisticasUsuario` [spec 047]).
+- Librerías nuevas permitidas cuando resuelven algo que HTML/CSS/React puro no cubre bien (animación orquestada, gestos...). Cada dependencia nueva en `package.json` necesita una razón concreta, no se añaden "por si acaso": `framer-motion` (animaciones UI), `qrcode.react` (renderizado SVG de QR de acceso por reserva) y `jsqr` (decodificación de códigos QR desde imágenes/canvas en cliente [spec 045]).
+- Usar la instancia centralizada de cliente HTTP en `src/services/api.ts` sin duplicar instancias de `axios`/`fetch` (`reservasService`, `pistasService`, `usuariosService`, `perfilService` con `getEstadisticas` [spec 047], `adminService`). Para descargas de archivos binarios/blob como CSV, `adminService.descargarCSV` usa `getMemoryAccessToken()` directamente.
+- No crear nuevos componentes en `src/components/ui` si el caso de uso se resuelve con los existentes (`button`, `input`, `card`).
 - Borrado sobre adición: eliminar código no utilizado antes de escribir nuevas abstracciones.
 
 ## Rutas y Navegación
@@ -174,6 +174,8 @@ Las rutas protegidas son:
 - `/dashboard`
 - `/reservas`
 - `/perfil`
+- `/admin/validar-qr` (`ValidarQRPage`: validación de código QR y entrada manual para administradores [spec 045])
+- `/admin/contabilidad` (`ContabilidadPage`: panel de KPIs contables y exportación CSV de transacciones para administradores [spec 046])
 
 `/pistas` es una ruta de acceso público para que cualquier visitante pueda consultar la disponibilidad e información de las instalaciones antes de registrarse o iniciar sesión.
 `ProtectedRoute` comprueba `isAuthenticated`. Si el usuario no está autenticado al intentar acceder a rutas protegidas, redirige a `/login`.

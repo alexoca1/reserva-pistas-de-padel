@@ -50,6 +50,9 @@ src/main/java/com/padel/reservas/
 |  |- FranjaDTO.java
 |  |- DisponibilidadDiaDTO.java
 |  |- SubidaResult.java
+|  |- ValidacionQRDTO.java
+|  |- ContabilidadDTO.java
+|  |- EstadisticasUsuarioDTO.java
 |- entities/
 |  |- Usuario.java
 |  |- Pista.java
@@ -61,6 +64,9 @@ src/main/java/com/padel/reservas/
 |  |- ConfiguracionClub.java
 |  |- FotoPista.java
 |  |- FotoSede.java
+|  |- Pago.java
+|  |- TipoPago.java
+|  |- MetodoPago.java
 |- repositories/
 |  |- UsuarioRepository.java
 |  |- PistaRepository.java
@@ -70,6 +76,7 @@ src/main/java/com/padel/reservas/
 |  |- ConfiguracionClubRepository.java
 |  |- FotoPistaRepository.java
 |  |- FotoSedeRepository.java
+|  |- PagoRepository.java
 |- services/
 |  |- CustomUserDetailsService.java
 |  |- JwtService.java
@@ -78,6 +85,7 @@ src/main/java/com/padel/reservas/
 |  |- ConfiguracionClubService.java
 |  |- CloudinaryService.java
 |  |- SecurityAuditService.java
+|  |- PagoService.java
 |- seed/
 |  |- DemoDataPlanGenerator.java
 |  |- DemoDataSeeder.java
@@ -127,6 +135,20 @@ src/main/java/com/padel/reservas/
 - `horaSlot: LocalTime` — slot atómico de 30 minutos
 - `reserva: Reserva` (`@ManyToOne`, `reserva_id`, `NOT NULL`)
 - Constraint única: `(pista_id, fecha, hora_slot)` — garantiza exclusión mutua atómica entre reservas concurrentes (ver `specs/017-reservas-duracion-variable`)
+
+### `Pago`
+
+- `id: Long`
+- `reserva: Reserva` (`@ManyToOne`, `reserva_id`, `NOT NULL`)
+- `usuario: Usuario` (`@ManyToOne`, `usuario_id`, `NOT NULL`)
+- `tipo: TipoPago` (enum `COBRO`, `REEMBOLSO`)
+- `metodo: MetodoPago` (enum `TARJETA_SIMULADA`, `BIZUM_SIMULADO`)
+- `importe: BigDecimal` (precisión 10, escala 2)
+- `fechaPago: LocalDateTime`
+- `concepto: String`
+- Consultas en `PagoRepository`:
+  - `sumImporteByTipoAndPeriodo(tipo, desde, hasta)`: suma acumulada de importes por tipo y rango temporal con `COALESCE(SUM(...), 0)` (spec 046).
+  - `findAllConReservaYPistaEnPeriodo(desde, hasta)`: listado de pagos con `JOIN FETCH` de reserva y pista ordenados cronológicamente para CSV (spec 046).
 
 ### `ConfiguracionClub`
 
@@ -186,10 +208,18 @@ El backend usa `CreateReservaDTO` para crear/actualizar reservas:
 - `telefono: String`
 - `pistaId: Long` (wrapper, no primitivo)
 - `usuarioId: Long` (opcional; solo aplica si quien llama es `ROLE_ADMIN` — ver `specs/010-titularidad-real-reserva-admin`)
+- `metodoPago: MetodoPago` (opcional; si es nulo, se usa TARJETA_SIMULADA por defecto en backend)
 
 > 💡 **Validaciones de Duración y Horario:** `CreateReservaDTO` valida mediante `@AssertTrue` que la duración entre `horaInicio` y `horaFin` sea de 60, 90 o 120 minutos y que `horaFin` no supere el horario de cierre (23:00).
 
 > ⚠️ **Nota para el Frontend:** Se debe enviar **solo** ese formato. No enviar objetos anidados como `pista: { id: ... }`.
+
+## DTO de Cancelación de Reserva
+
+El backend usa `CancelReservaDTO` (opcional) para `DELETE /reservas/{id}`:
+
+- `metodoPago: MetodoPago` (opcional)
+- `aplicarTramos: boolean` (opcional)
 
 ## DTO de Actualización de Perfil
 
@@ -212,6 +242,41 @@ El backend usa `UpdateConfiguracionDTO` para `PUT /admin/configuracion`:
 - `duracionesPermitidas: String` ("60,90,120")
 - `maxMinutosReservaPorUsuarioDia: Integer`
 
+## DTO de Validación de QR de Reserva
+
+El backend usa `ValidacionQRDTO` (record) para `GET /reservas/validar-qr?codigo={codigo}`:
+
+- `reservaId: Long`
+- `codigoReserva: String`
+- `nombreJugador: String`
+- `telefono: String`
+- `fechaReserva: String`
+- `horaInicio: String`
+- `horaFin: String`
+- `numeroPista: Integer`
+- `estado: String`
+- `costeEstimado: BigDecimal`
+
+## DTO de Contabilidad de la Sede
+
+El backend usa `ContabilidadDTO` (record) para `GET /admin/contabilidad`:
+
+- `ingresosBrutos: BigDecimal`
+- `reembolsosEmitidos: BigDecimal`
+- `ingresosNetos: BigDecimal`
+- `reservasConfirmadas: long`
+- `reservasCanceladas: long`
+- `tasaCancelacion: double`
+
+## DTO de Estadísticas del Usuario
+
+El backend usa `EstadisticasUsuarioDTO` (record) para `GET /auth/estadisticas`:
+
+- `partidosJugados: long`
+- `horasEnPista: double`
+- `gastoNeto: BigDecimal`
+- `pistaMasFrecuente: Integer`
+
 ## Endpoints Actuales (Fuente de Verdad)
 
 > Base URL: `http://localhost:8081`
@@ -226,6 +291,7 @@ El backend usa `UpdateConfiguracionDTO` para `PUT /admin/configuracion`:
 | POST   | `/auth/register`       | No                     | No                  | Registra usuario estándar                                            |
 | POST   | `/auth/register-admin` | **Sí**                 | **Sí**              | Registra usuario administrador (Solo Administrador)                  |
 | GET    | `/auth/perfil`         | Sí                     | No                  | Devuelve datos del usuario autenticado                               |
+| GET    | `/auth/estadisticas`   | Sí                     | No                  | Devuelve estadísticas personales del usuario (partidos jugados, horas, gasto neto y pista favorita) |
 | GET    | `/auth/test-roles`     | Sí                     | No                  | Endpoint técnico de prueba                                           |
 | GET    | `/auth/usuarios`       | Sí                     | **Sí**              | Lista todos los usuarios sin contraseña — usado por selectores de admin |
 | PUT    | `/auth/perfil`         | Sí                     | No                  | Actualiza nombre, apellidos y teléfono del usuario autenticado; admin puede pasar `usuarioId` para editar a otro |
@@ -255,14 +321,18 @@ El backend usa `UpdateConfiguracionDTO` para `PUT /admin/configuracion`:
 | POST   | `/reservas`                  | Sí                     | No                  | Crea una reserva y asigna usuario desde JWT                             |
 | PUT    | `/reservas/{id}`             | Sí                     | No                  | Usuario: actualiza su reserva; Admin: cualquier reserva                 |
 | DELETE | `/reservas/{id}`             | Sí                     | No                  | Borrado lógico (soft-delete): marca estado CANCELADA y timestamp fechaCancelacion |
+| GET    | `/reservas/{id}/pagos`       | Sí                     | No                  | Devuelve el historial de pagos asociados a la reserva |
+| GET    | `/reservas/validar-qr`       | Sí                     | Sí                  | Valida y devuelve datos de una reserva por código QR (`@PreAuthorize("hasRole('ADMIN')")`) |
 | DELETE | `/reservas`                  | Sí                     | Sí                  | Elimina todas las reservas (`@PreAuthorize("hasRole('ADMIN')")`)        |
 
-### 4) Configuración del Club (`/admin/configuracion` y `/configuracion`)
+### 4) Configuración y Administración del Club (`/admin/*` y `/configuracion`)
 
 | Método | Ruta                      | Requiere autenticación | Requiere ROLE_ADMIN | Descripción                                                  |
 | ------ | ------------------------- | ---------------------- | ------------------- | ------------------------------------------------------------ |
 | GET    | `/admin/configuracion`    | **Sí**                 | **Sí**              | Obtiene la configuración del club (Admin)                    |
 | PUT    | `/admin/configuracion`    | **Sí**                 | **Sí**              | Actualiza la configuración del club (Admin)                  |
+| GET    | `/admin/contabilidad`     | **Sí**                 | **Sí**              | Resumen contable de ingresos, reembolsos y tasa de cancelación (Admin) |
+| GET    | `/admin/contabilidad/csv` | **Sí**                 | **Sí**              | Exportación en formato CSV con el detalle de pagos y reservas (Admin)  |
 | GET    | `/configuracion/duraciones`| **No**                | No                  | Obtiene duraciones permitidas (público para selector frontend)|
 
 ### 5) Subida de archivos
@@ -363,6 +433,7 @@ Configurado globalmente en `SecurityConfig` para `/**` con:
 
 - **Preparación del backend para producción (spec 040)**: `Dockerfile` multi-etapa (build con Temurin 21 JDK y runtime ligero con Temurin 21 JRE, usuario no-root `appuser`, JVM flags optimizados para serverless Cloud Run: `-XX:MaxRAMPercentage=75.0 -XX:+UseSerialGC -XX:TieredStopAtLevel=1`), `.dockerignore`, perfil `application-prod.properties` (externalización estricta por env vars, pool HikariCP = 5 para Aiven, SSL, `server.forward-headers-strategy=framework` para resolución de IP real en Rate Limiting tras proxy inverso y `app.cookie.secure=true` en cookies del refresh token).
 - **Precio, estado de pista y seed de demostración (spec 043)**: Campos `precioHora` (`BigDecimal`) y `estado` (`EstadoPista`: `ACTIVA`, `MANTENIMIENTO`) en `Pista`. Rechazo con HTTP 409 (`PistaEnMantenimientoException`) en `crear` y `actualizar` de `ReservaService`. Cálculo de `costeEstimado` (`@Transient`) y regla de negocio `esJugada(ahora)` en `Reserva`. Actualización de `DisponibilidadDiaDTO` con precio y estado. Generador en memoria POJO puro `DemoDataPlanGenerator` (800-1500 reservas con distribución pico y 0 solapamientos con semilla 42L) y `DemoDataSeeder` condicionado por `app.seed.demo=true` e idempotente con dominios `@seed.invalid`.
+- **Pagos simulados y códigos QR (spec 044)**: Entidades `Pago`, `TipoPago` y `MetodoPago`. Registro de cobros al crear reservas y cálculo/registro de reembolsos al cancelar (con tramos) o editar. Endpoint `GET /reservas/{id}/pagos` e integración en `DemoDataSeeder`.
 
 > **Nota para futuras implementaciones:** Actualizar este archivo al finalizar cada cambio funcional relevante.
 

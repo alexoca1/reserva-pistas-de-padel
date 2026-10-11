@@ -1,0 +1,11 @@
+# Tareas: Pagos Simulados
+- [ ] T01 - Crear enums `TipoPago` y `MetodoPago`.
+- [ ] T02 - Crear entidad `Pago` y su repositorio `PagoRepository`. Modificar `Reserva`.
+- [ ] T03 - Crear `PagoDTO` y `PagoService` (lógica de cobros, reembolsos, ajustes).
+- [ ] T04 - Actualizar `CreateReservaDTO` y crear `CancelReservaDTO`.
+- [ ] T05 - Refactorizar `ReservaService` (mover cancelar, actualizar lógica de editar y crear).
+- [ ] T06 - Refactorizar `ReservasController` (@RequiredArgsConstructor, deleteReserva con DTO y headers, endpoint de pagos).
+- [ ] T07 - Actualizar `DemoDataSeeder` con cobros y reembolsos simulados.
+- [ ] T08 - Actualizar `SecurityConfig` (verificar permitAll para disponibilidad).
+- [ ] T09 - Escribir tests para `ReservaService`, `PagoService` y `ReservasControllerSecurityTest`.
+- [ ] T10 - Documentación: Actualizar AGENTS.md y README.md.

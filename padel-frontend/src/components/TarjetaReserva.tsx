@@ -2,6 +2,7 @@ import type { Reserva } from "../types";
 import { parseFechaLocal, formatearFechaRelativa } from "@/lib/fechas";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { QRCodeSVG } from "qrcode.react";
 
 import { useAuth } from "../context/AuthContext";
 
@@ -42,6 +43,36 @@ export function TarjetaReserva({ reserva, onEditar, onEliminar }: TarjetaReserva
             </span>
           ) : null}
         </div>
+        
+        {reserva.pagos && reserva.pagos.length > 0 && (
+          <div className="mt-2 space-y-1 border-t border-border/50 pt-2 text-xs">
+            {reserva.pagos.map((pago) => (
+              <div key={pago.id} className="flex items-center justify-between">
+                <span className={pago.tipo === "COBRO" ? "text-muted-foreground" : "text-green-600 dark:text-green-400 font-medium"}>
+                  {pago.tipo === "COBRO" ? "Cobro" : "Reembolso"} ({pago.metodo === "TARJETA_SIMULADA" ? "Tarjeta" : "Bizum"})
+                </span>
+                <span className={pago.tipo === "COBRO" ? "font-medium" : "font-medium text-green-600 dark:text-green-400"}>
+                  {pago.tipo === "COBRO" ? "-" : "+"}{Number(pago.importe).toFixed(2)} €
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {reserva.estado !== "CANCELADA" && reserva.codigoReserva && (
+          <div className="flex flex-col items-center gap-1 border-t border-border/40 pt-3">
+            <QRCodeSVG
+              value={reserva.codigoReserva}
+              size={112}
+              level="M"
+              className="rounded-md"
+            />
+            <span className="font-mono text-[10px] text-muted-foreground tracking-wider">
+              {reserva.codigoReserva}
+            </span>
+          </div>
+        )}
+
         <div className="flex items-center gap-2 pt-2">
           <Button
             variant="secondary"

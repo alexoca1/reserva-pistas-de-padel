@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { perfilService, usuariosService } from "../services/api";
-import type { Usuario, PerfilPayload } from "../types";
+import type { Usuario, PerfilPayload, EstadisticasUsuario } from "../types";
 import { getErrorMessage } from "../types";
 import { motion } from "framer-motion";
 import { fadeUp, staggerContainer } from "@/lib/motion";
@@ -27,6 +27,22 @@ export function PerfilPage() {
   const { mostrarToast } = useToast();
   const navigate = useNavigate();
   const jugadorSelectId = useId();
+
+  // Estado estadísticas (Spec 047)
+  const [estadisticas, setEstadisticas] = useState<EstadisticasUsuario | null>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  useEffect(() => {
+    perfilService
+      .getEstadisticas()
+      .then((data) => {
+        if (data) setEstadisticas(data);
+      })
+      .catch(() => {
+        /* silencioso — no bloquea la página */
+      })
+      .finally(() => setLoadingStats(false));
+  }, []);
 
   // Estado avatar
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
@@ -615,6 +631,73 @@ export function PerfilPage() {
               )}
             </CardContent>
           </Card>
+      </motion.div>
+
+      {/* Mis estadísticas (Spec 047) */}
+      <motion.div variants={fadeUp}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Mis estadísticas</CardTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Resumen de tu actividad en el club.
+            </p>
+          </CardHeader>
+          <CardContent>
+            {loadingStats ? (
+              <p className="text-sm text-muted-foreground">Cargando...</p>
+            ) : estadisticas ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
+                    <p className="text-2xl font-bold text-foreground">
+                      {estadisticas.partidosJugados}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Partidos jugados
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
+                    <p className="text-2xl font-bold text-foreground">
+                      {estadisticas.horasEnPista.toFixed(1)} h
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Horas en pista
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
+                    <p className="text-2xl font-bold text-foreground">
+                      {Number(estadisticas.gastoNeto).toFixed(2)} €
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Gasto neto
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
+                    <p className="text-2xl font-bold text-foreground">
+                      {estadisticas.pistaMasFrecuente != null
+                        ? `Pista ${estadisticas.pistaMasFrecuente}`
+                        : "—"}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Pista favorita
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground italic">
+                  Los importes son simulados y no corresponden a
+                  transacciones reales.
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No hay datos disponibles todavía.
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Sección 2: Editar datos de un jugador (Solo Admin) */}

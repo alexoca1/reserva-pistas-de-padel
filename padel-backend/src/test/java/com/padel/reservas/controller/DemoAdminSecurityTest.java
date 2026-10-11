@@ -65,6 +65,12 @@ class DemoAdminSecurityTest {
     private ReservaService reservaService;
 
     @MockitoBean
+    private com.padel.reservas.repositories.PagoRepository pagoRepository;
+
+    @MockitoBean
+    private com.padel.reservas.services.PagoService pagoService;
+
+    @MockitoBean
     private ConfiguracionClubService configuracionClubService;
 
     @MockitoBean

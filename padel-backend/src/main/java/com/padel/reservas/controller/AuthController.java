@@ -4,8 +4,16 @@ import com.padel.reservas.dto.LoginRequest;
 import com.padel.reservas.dto.RegisterRequest;
 import com.padel.reservas.dto.UpdatePerfilDTO;
 import com.padel.reservas.dto.SubidaResult;
+import com.padel.reservas.dto.EstadisticasUsuarioDTO;
+import com.padel.reservas.entities.EstadoReserva;
+import com.padel.reservas.entities.Pago;
 import com.padel.reservas.entities.RefreshToken;
+import com.padel.reservas.entities.Reserva;
+import com.padel.reservas.entities.TipoPago;
 import com.padel.reservas.entities.Usuario;
+import com.padel.reservas.repositories.PagoRepository;
+import com.padel.reservas.repositories.RefreshTokenRepository;
+import com.padel.reservas.repositories.ReservaRepository;
 import com.padel.reservas.repositories.UsuarioRepository;
 import com.padel.reservas.services.CloudinaryService;
 import com.padel.reservas.services.JwtService;
@@ -13,30 +21,28 @@ import com.padel.reservas.services.RefreshTokenService;
 import com.padel.reservas.services.SecurityAuditService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import org.springframework.security.access.prepost.PreAuthorize;
-
+import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import com.padel.reservas.repositories.RefreshTokenRepository;
-import com.padel.reservas.repositories.ReservaRepository;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.transaction.annotation.Transactional;
 
 @RestController
 @RequestMapping("/auth")
@@ -49,6 +55,7 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final ReservaRepository reservaRepository;
+    private final PagoRepository pagoRepository;
     private final CloudinaryService cloudinaryService;
     private final SecurityAuditService securityAuditService;
 
@@ -537,6 +544,57 @@ public class AuthController {
         return ResponseEntity.noContent()
                 .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
                 .build();
+    }
+
+    @GetMapping("/estadisticas")
+    public ResponseEntity<EstadisticasUsuarioDTO> getEstadisticas(Authentication authentication) {
+        String email = authentication.getName();
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        List<Reserva> reservas = reservaRepository.findByUsuarioEmail(email);
+        List<Pago> pagos = pagoRepository.findByUsuarioId(usuario.getId());
+
+        LocalDateTime ahora = LocalDateTime.now();
+        List<Reserva> jugadas = reservas.stream()
+                .filter(r -> r.esJugada(ahora))
+                .toList();
+
+        long partidosJugados = jugadas.size();
+
+        long minutosTotales = jugadas.stream()
+                .filter(r -> r.getHoraInicio() != null && r.getHoraFin() != null)
+                .mapToLong(r -> Duration.between(r.getHoraInicio(), r.getHoraFin()).toMinutes())
+                .sum();
+        double horas = minutosTotales / 60.0;
+        double horasEnPista = Math.round(horas * 10.0) / 10.0;
+
+        BigDecimal cobros = pagos.stream()
+                .filter(p -> p.getTipo() == TipoPago.COBRO)
+                .map(Pago::getImporte)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal reembolsos = pagos.stream()
+                .filter(p -> p.getTipo() == TipoPago.REEMBOLSO)
+                .map(Pago::getImporte)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal gastoNeto = cobros.subtract(reembolsos);
+
+        Integer pistaMasFrecuente = reservas.stream()
+                .filter(r -> r.getEstado() == EstadoReserva.CONFIRMADA && r.getPista() != null && r.getPista().getNumeroPista() != null)
+                .collect(java.util.stream.Collectors.groupingBy(r -> r.getPista().getNumeroPista(), java.util.stream.Collectors.counting()))
+                .entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(null);
+
+        return ResponseEntity.ok(new EstadisticasUsuarioDTO(
+                partidosJugados,
+                horasEnPista,
+                gastoNeto,
+                pistaMasFrecuente
+        ));
     }
 
     private boolean isAdmin(Authentication authentication) {

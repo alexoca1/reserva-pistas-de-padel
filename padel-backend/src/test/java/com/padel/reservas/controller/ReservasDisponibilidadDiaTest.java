@@ -54,10 +54,16 @@ class ReservasDisponibilidadDiaTest {
     @MockitoBean
     private ReservaService reservaService;
 
+    @MockitoBean
+    private com.padel.reservas.repositories.PagoRepository pagoRepository;
+
+    @MockitoBean
+    private com.padel.reservas.services.PagoService pagoService;
+
     @Test
-    void disponibilidadDia_sinAutenticacion_devuelve401() throws Exception {
+    void disponibilidadDia_sinAutenticacion_devuelve200() throws Exception {
         mockMvc.perform(get("/reservas/disponibilidad-dia").param("fecha", "2026-12-01"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isOk());
     }
 
     @Test

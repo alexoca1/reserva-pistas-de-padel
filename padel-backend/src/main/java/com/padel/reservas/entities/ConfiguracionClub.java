@@ -39,6 +39,9 @@ public class ConfiguracionClub {
     @Column(nullable = false)
     private Integer diasAntelacionMaxima = 7;
 
+    @Column(nullable = false)
+    private Integer horasCancelacionGratuita = 24;
+
     @Transient
     public Set<Integer> getDuracionesPermitidas() {
         return Arrays.stream(duracionesPermitidasMinutos.split(","))

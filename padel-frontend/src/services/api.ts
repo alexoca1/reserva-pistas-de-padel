@@ -1,5 +1,7 @@
 import type {
+  ContabilidadResumen,
   DisponibilidadDia,
+  EstadisticasUsuario,
   FotoPista,
   FotoSede,
   FranjaOcupada,
@@ -10,6 +12,7 @@ import type {
   ReservaPayload,
   SubidaResult,
   Usuario,
+  ValidacionQR,
 } from "../types";
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
@@ -201,10 +204,17 @@ export const reservasService = {
       method: "PUT",
       body: JSON.stringify(datos),
     }),
-  delete: (id: number) =>
+  delete: (id: number, payload?: { aPeticionDelJugador?: boolean }) =>
     fetchAPI<null>(`/reservas/${id}`, {
       method: "DELETE",
+      ...(payload && { body: JSON.stringify(payload) }),
     }),
+  getPagos: (id: number) =>
+    fetchAPI<import("../types").PagoDTO[]>(`/reservas/${id}/pagos`),
+  validarQR: (codigo: string) =>
+    fetchAPI<ValidacionQR>(
+      `/reservas/validar-qr?codigo=${encodeURIComponent(codigo)}`
+    ),
 };
 
 export const usuariosService = {
@@ -233,6 +243,8 @@ export const perfilService = {
     fetchAPI<void>("/auth/cuenta", {
       method: "DELETE",
     }),
+  getEstadisticas: () =>
+    fetchAPI<EstadisticasUsuario>("/auth/estadisticas"),
 };
 
 export const configuracionService = {
@@ -289,4 +301,31 @@ export const fotoSedeService = {
 
   eliminar: (id: number) =>
     fetchAPI(`/sede/fotos/${id}`, { method: "DELETE" }),
+};
+
+export const adminService = {
+  getContabilidad: (desde: string, hasta: string) =>
+    fetchAPI<ContabilidadResumen>(
+      `/admin/contabilidad?desde=${desde}&hasta=${hasta}`
+    ),
+  descargarCSV: async (desde: string, hasta: string): Promise<void> => {
+    const token = getMemoryAccessToken();
+    const res = await fetch(
+      `${API_BASE_URL}/admin/contabilidad/csv?desde=${desde}&hasta=${hasta}`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
+      }
+    );
+    if (!res.ok) throw new Error("Error al descargar el CSV");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `contabilidad-${desde}-${hasta}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
 };

@@ -5,6 +5,7 @@ import type { DisponibilidadDia, Pista, Reserva, ReservaPayload, Usuario, Config
 import { getErrorMessage } from "../types";
 import { obtenerFechaHoyLocal, obtenerFechaISOHoyLocal, parseFechaLocal } from "@/lib/fechas";
 import { sumarMinutos, horaAMinutos, minutosAHora } from "@/lib/franjas";
+import { calcularTramoReembolso } from "@/lib/pagos";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,7 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { BuscadorJugador } from "@/components/BuscadorJugador";
 import { IconPlus } from "@/components/icons";
+import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { motion } from "framer-motion";
@@ -33,6 +35,7 @@ interface ReservaForm {
   nombreJugador: string;
   telefono: string;
   pistaId: string;
+  metodoPago: "TARJETA_SIMULADA" | "BIZUM_SIMULADO" | "";
 }
 
 const initialForm: ReservaForm = {
@@ -42,6 +45,7 @@ const initialForm: ReservaForm = {
   nombreJugador: "",
   telefono: "",
   pistaId: "",
+  metodoPago: "TARJETA_SIMULADA",
 };
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
@@ -82,11 +86,14 @@ export function ReservasPage() {
   // diálogo
   const [openFormDialog, setOpenFormDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [reservaConfirmada, setReservaConfirmada] = useState<Reserva | null>(null);
+  const [openConfirmacionQR, setOpenConfirmacionQR] = useState(false);
   const [reservaEditando, setReservaEditando] = useState<Reserva | null>(null);
   const [reservaEliminando, setReservaEliminando] = useState<Reserva | null>(null);
   const [form, setForm] = useState<ReservaForm>(initialForm);
   const [duracionMinutos, setDuracionMinutos] = useState<number>(90);
   const [usuarioSeleccionadoId, setUsuarioSeleccionadoId] = useState<number | null>(null);
+  const [aPeticionDelJugador, setAPeticionDelJugador] = useState(false);
 
   // auto-apertura diálogo de edición desde navegación (Dashboard)
   const autoOpenRef = useRef(false);
@@ -108,8 +115,19 @@ export function ReservasPage() {
     setReservaEditando(null);
     setReservaEliminando(null);
     setUsuarioSeleccionadoId(null);
+    setAPeticionDelJugador(false);
     setForm(initialForm);
     setError("");
+    if (returnTo) {
+      navigate(returnTo, {
+        state: selectedUserIdNav ? { selectedUserId: selectedUserIdNav } : undefined,
+      });
+    }
+  };
+
+  const cerrarConfirmacion = () => {
+    setOpenConfirmacionQR(false);
+    setReservaConfirmada(null);
     if (returnTo) {
       navigate(returnTo, {
         state: selectedUserIdNav ? { selectedUserId: selectedUserIdNav } : undefined,
@@ -272,6 +290,7 @@ export function ReservasPage() {
         horaFin: initHoraFin,
         nombreJugador: nombreAutenticado,
         telefono: user?.telefono || "",
+        metodoPago: "TARJETA_SIMULADA",
       });
     }
     setOpenFormDialog(true);
@@ -302,6 +321,7 @@ export function ReservasPage() {
         nombreJugador: franja.nombreJugador ?? "",
         telefono: userObj?.telefono ?? "",
         pistaId: String(pistaId),
+        metodoPago: "TARJETA_SIMULADA",
       });
     } else {
       setForm({
@@ -311,6 +331,7 @@ export function ReservasPage() {
         nombreJugador: franja.nombreJugador ?? "",
         telefono: user?.telefono || "",
         pistaId: String(pistaId),
+        metodoPago: "TARJETA_SIMULADA",
       });
     }
     setOpenFormDialog(true);
@@ -386,6 +407,7 @@ export function ReservasPage() {
       pista: { id: Number(formConHoraFin.pistaId) },
       usuarioId: titularId,
       usuario: { id: titularId },
+      metodoPago: (form.metodoPago || "TARJETA_SIMULADA") as "TARJETA_SIMULADA" | "BIZUM_SIMULADO",
     };
 
     try {
@@ -393,21 +415,28 @@ export function ReservasPage() {
       if (reservaEditando?.id) {
         await reservasService.update(reservaEditando.id, payload);
         mostrarToast("Reserva actualizada");
+        setOpenFormDialog(false);
+        setReservaEditando(null);
+        setUsuarioSeleccionadoId(null);
+        setForm(initialForm);
+        if (returnTo) {
+          navigate(returnTo, {
+            state: selectedUserIdNav ? { selectedUserId: selectedUserIdNav } : undefined,
+          });
+          return;
+        }
+        await cargarDisponibilidad(fechaVista);
       } else {
-        await reservasService.create(payload);
+        const savedReserva = await reservasService.create(payload);
+        setReservaConfirmada(savedReserva);
+        setOpenConfirmacionQR(true);
+        setOpenFormDialog(false);
+        setReservaEditando(null);
+        setUsuarioSeleccionadoId(null);
+        setForm(initialForm);
         mostrarToast("Reserva creada");
+        await cargarDisponibilidad(fechaVista);
       }
-      setOpenFormDialog(false);
-      setReservaEditando(null);
-      setUsuarioSeleccionadoId(null);
-      setForm(initialForm);
-      if (returnTo) {
-        navigate(returnTo, {
-          state: selectedUserIdNav ? { selectedUserId: selectedUserIdNav } : undefined,
-        });
-        return;
-      }
-      await cargarDisponibilidad(fechaVista);
     } catch (e) {
       setError(getErrorMessage(e, "Error al guardar reserva"));
       await cargarDisponibilidad(fechaVista);
@@ -420,10 +449,11 @@ export function ReservasPage() {
     if (!reservaEliminando?.id) return;
     try {
       setLoading(true);
-      await reservasService.delete(reservaEliminando.id);
+      await reservasService.delete(reservaEliminando.id, { aPeticionDelJugador });
       mostrarToast("Reserva eliminada");
       setOpenDeleteDialog(false);
       setReservaEliminando(null);
+      setAPeticionDelJugador(false);
       if (returnTo) {
         navigate(returnTo, {
           state: selectedUserIdNav ? { selectedUserId: selectedUserIdNav } : undefined,
@@ -677,6 +707,22 @@ export function ReservasPage() {
               </Select>
             </div>
 
+            {!reservaEditando && (
+              <div className="grid gap-2">
+                <Label htmlFor="metodoPago">Método de pago (Simulado)</Label>
+                <Select
+                  id="metodoPago"
+                  name="metodoPago"
+                  value={form.metodoPago}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="TARJETA_SIMULADA">Tarjeta de crédito / débito</option>
+                  <option value="BIZUM_SIMULADO">Bizum</option>
+                </Select>
+              </div>
+            )}
+
             {/* Coste estimado en tiempo real */}
             <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 flex items-center justify-between text-sm">
               <span className="text-muted-foreground font-medium">Coste estimado:</span>
@@ -732,9 +778,52 @@ export function ReservasPage() {
           <DialogHeader>
             <DialogTitle>Eliminar reserva</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-foreground">
-            ¿Seguro que quieres eliminar esta reserva?
-          </p>
+          
+          <div className="space-y-4">
+            <p className="text-sm text-foreground">
+              ¿Seguro que quieres cancelar esta reserva?
+            </p>
+
+            {reservaEliminando && (
+              <div className="rounded-md border border-border/50 bg-muted/20 p-3 text-sm">
+                <p className="font-medium mb-1">Información de reembolso:</p>
+                {(() => {
+                  // asumiendo 24h default si no lo sabemos
+                  const tramo = calcularTramoReembolso(reservaEliminando, 24);
+                  if (tramo.costeTotal === 0) return <span className="text-muted-foreground">La reserva no tenía coste.</span>;
+                  return (
+                    <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                      <li>Coste original: <strong>{tramo.costeTotal.toFixed(2)} €</strong></li>
+                      <li>Porcentaje a reembolsar: <strong>{tramo.porcentaje}%</strong> (antelación: {Math.floor(tramo.minutosHastaInicio / 60)}h)</li>
+                      <li>Importe a reembolsar: <strong>{tramo.importeReembolso.toFixed(2)} €</strong></li>
+                    </ul>
+                  );
+                })()}
+              </div>
+            )}
+
+            {isAdmin && (
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="aPeticionDelJugador"
+                  className="rounded border-gray-300"
+                  checked={aPeticionDelJugador}
+                  onChange={(e) => setAPeticionDelJugador(e.target.checked)}
+                />
+                <label htmlFor="aPeticionDelJugador" className="text-sm text-foreground font-medium">
+                  Cancelar a petición del jugador (aplicar penalización de tramos)
+                </label>
+              </div>
+            )}
+            
+            {isAdmin && !aPeticionDelJugador && reservaEliminando && (
+              <p className="text-xs text-muted-foreground">
+                * Como admin, si no marcas la casilla, se reembolsará el 100% independientemente de la antelación.
+              </p>
+            )}
+          </div>
+
           <DialogFooter>
             <Button
               type="button"
@@ -749,6 +838,54 @@ export function ReservasPage() {
               onClick={() => void confirmarEliminar()}
             >
               Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Diálogo de confirmación con QR (Spec UX) ── */}
+      <Dialog
+        open={openConfirmacionQR}
+        className="max-w-sm"
+        onOpenChange={(open) => {
+          if (!open) cerrarConfirmacion();
+        }}
+      >
+        <DialogContent className="text-center">
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-center">¡Reserva confirmada!</DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center justify-center gap-3 py-2 text-center">
+            {reservaConfirmada?.codigoReserva ? (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Guarda este QR para acceder a la pista.
+                </p>
+                <div className="mx-auto flex items-center justify-center rounded-xl border border-border/40 bg-white p-3 shadow-md">
+                  <QRCodeSVG
+                    value={reservaConfirmada.codigoReserva}
+                    size={180}
+                    level="M"
+                  />
+                </div>
+                <span className="font-mono text-xs text-muted-foreground tracking-widest">
+                  {reservaConfirmada.codigoReserva}
+                </span>
+                <p className="text-xs text-muted-foreground">
+                  Haz una captura de pantalla para guardarlo.
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Reserva creada correctamente.
+              </p>
+            )}
+          </div>
+
+          <DialogFooter className="justify-center sm:justify-center">
+            <Button onClick={cerrarConfirmacion} className="w-full sm:w-auto">
+              Entendido
             </Button>
           </DialogFooter>
         </DialogContent>
