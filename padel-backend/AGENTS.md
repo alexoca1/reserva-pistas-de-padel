@@ -51,6 +51,7 @@ src/main/java/com/padel/reservas/
 |  |- DisponibilidadDiaDTO.java
 |  |- SubidaResult.java
 |  |- ValidacionQRDTO.java
+|  |- ContabilidadDTO.java
 |- entities/
 |  |- Usuario.java
 |  |- Pista.java
@@ -144,6 +145,9 @@ src/main/java/com/padel/reservas/
 - `importe: BigDecimal` (precisión 10, escala 2)
 - `fechaPago: LocalDateTime`
 - `concepto: String`
+- Consultas en `PagoRepository`:
+  - `sumImporteByTipoAndPeriodo(tipo, desde, hasta)`: suma acumulada de importes por tipo y rango temporal con `COALESCE(SUM(...), 0)` (spec 046).
+  - `findAllConReservaYPistaEnPeriodo(desde, hasta)`: listado de pagos con `JOIN FETCH` de reserva y pista ordenados cronológicamente para CSV (spec 046).
 
 ### `ConfiguracionClub`
 
@@ -252,6 +256,17 @@ El backend usa `ValidacionQRDTO` (record) para `GET /reservas/validar-qr?codigo=
 - `estado: String`
 - `costeEstimado: BigDecimal`
 
+## DTO de Contabilidad de la Sede
+
+El backend usa `ContabilidadDTO` (record) para `GET /admin/contabilidad`:
+
+- `ingresosBrutos: BigDecimal`
+- `reembolsosEmitidos: BigDecimal`
+- `ingresosNetos: BigDecimal`
+- `reservasConfirmadas: long`
+- `reservasCanceladas: long`
+- `tasaCancelacion: double`
+
 ## Endpoints Actuales (Fuente de Verdad)
 
 > Base URL: `http://localhost:8081`
@@ -299,12 +314,14 @@ El backend usa `ValidacionQRDTO` (record) para `GET /reservas/validar-qr?codigo=
 | GET    | `/reservas/validar-qr`       | Sí                     | Sí                  | Valida y devuelve datos de una reserva por código QR (`@PreAuthorize("hasRole('ADMIN')")`) |
 | DELETE | `/reservas`                  | Sí                     | Sí                  | Elimina todas las reservas (`@PreAuthorize("hasRole('ADMIN')")`)        |
 
-### 4) Configuración del Club (`/admin/configuracion` y `/configuracion`)
+### 4) Configuración y Administración del Club (`/admin/*` y `/configuracion`)
 
 | Método | Ruta                      | Requiere autenticación | Requiere ROLE_ADMIN | Descripción                                                  |
 | ------ | ------------------------- | ---------------------- | ------------------- | ------------------------------------------------------------ |
 | GET    | `/admin/configuracion`    | **Sí**                 | **Sí**              | Obtiene la configuración del club (Admin)                    |
 | PUT    | `/admin/configuracion`    | **Sí**                 | **Sí**              | Actualiza la configuración del club (Admin)                  |
+| GET    | `/admin/contabilidad`     | **Sí**                 | **Sí**              | Resumen contable de ingresos, reembolsos y tasa de cancelación (Admin) |
+| GET    | `/admin/contabilidad/csv` | **Sí**                 | **Sí**              | Exportación en formato CSV con el detalle de pagos y reservas (Admin)  |
 | GET    | `/configuracion/duraciones`| **No**                | No                  | Obtiene duraciones permitidas (público para selector frontend)|
 
 ### 5) Subida de archivos

@@ -1,4 +1,5 @@
 import type {
+  ContabilidadResumen,
   DisponibilidadDia,
   FotoPista,
   FotoSede,
@@ -297,4 +298,31 @@ export const fotoSedeService = {
 
   eliminar: (id: number) =>
     fetchAPI(`/sede/fotos/${id}`, { method: "DELETE" }),
+};
+
+export const adminService = {
+  getContabilidad: (desde: string, hasta: string) =>
+    fetchAPI<ContabilidadResumen>(
+      `/admin/contabilidad?desde=${desde}&hasta=${hasta}`
+    ),
+  descargarCSV: async (desde: string, hasta: string): Promise<void> => {
+    const token = getMemoryAccessToken();
+    const res = await fetch(
+      `${API_BASE_URL}/admin/contabilidad/csv?desde=${desde}&hasta=${hasta}`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
+      }
+    );
+    if (!res.ok) throw new Error("Error al descargar el CSV");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `contabilidad-${desde}-${hasta}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
 };

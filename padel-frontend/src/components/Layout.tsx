@@ -32,6 +32,7 @@ const TITULOS_POR_RUTA: Record<string, string> = {
   "/privacidad": "Política de Privacidad",
   "/terminos": "Términos y Condiciones",
   "/admin/validar-qr": "Validar QR",
+  "/admin/contabilidad": "Contabilidad",
 };
 
 const DESCRIPCION_BASE =
@@ -47,6 +48,7 @@ const DESCRIPCIONES_POR_RUTA: Record<string, string> = {
   "/privacidad": "Política de privacidad y protección de datos del Club Pádel Calatrava.",
   "/terminos": "Términos y condiciones de uso del servicio de reservas de pádel.",
   "/admin/validar-qr": "Valida el acceso de jugadores escaneando o introduciendo el código QR de su reserva.",
+  "/admin/contabilidad": "Resumen de ingresos, reembolsos y tasa de cancelación del club.",
 };
 
 export function Layout() {

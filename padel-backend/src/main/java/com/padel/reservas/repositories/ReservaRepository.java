@@ -23,4 +23,6 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 	long countByPistaIdAndFechaReservaGreaterThanEqualAndEstado(Long pistaId, LocalDate fecha, EstadoReserva estado);
 
 	Optional<Reserva> findByCodigoReserva(String codigoReserva);
+
+	long countByEstadoAndFechaReservaBetween(EstadoReserva estado, LocalDate desde, LocalDate hasta);
 }

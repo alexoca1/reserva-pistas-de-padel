@@ -254,7 +254,7 @@ export function DashboardPage() {
       </motion.div>
 
       {/* Grid de navegación */}
-      <div className={`grid grid-cols-1 gap-6 ${isAdmin ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <motion.div variants={fadeUp}>
           <Card className="h-full">
             <CardHeader>
@@ -288,21 +288,42 @@ export function DashboardPage() {
         </motion.div>
 
         {isAdmin && (
-          <motion.div variants={fadeUp}>
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle className="text-xl">Validar QR</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground">
-                  Escanea o introduce el código de reserva para validar el acceso a pista.
-                </p>
-                <Button onClick={() => navigate("/admin/validar-qr")} className="w-full sm:w-auto">
-                  Abrir validador
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
+          <>
+            <motion.div variants={fadeUp}>
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-xl">Validar QR</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-muted-foreground">
+                    Escanea o introduce el código de reserva para validar el acceso a pista.
+                  </p>
+                  <Button onClick={() => navigate("/admin/validar-qr")} className="w-full sm:w-auto">
+                    Abrir validador
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div variants={fadeUp}>
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-xl">Contabilidad</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-muted-foreground">
+                    Ingresos, reembolsos y tasa de cancelación del club.
+                  </p>
+                  <Button
+                    onClick={() => navigate("/admin/contabilidad")}
+                    className="w-full sm:w-auto"
+                  >
+                    Ver contabilidad
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </>
         )}
       </div>
 

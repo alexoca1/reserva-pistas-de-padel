@@ -151,10 +151,10 @@ Los tokens de color y radio viven en `src/index.css`, dentro de `:root` y del bl
 
 ### Reglas Ponytail Frontend
 
-- Priorizar componentes nativos de HTML5 (ej. `<input type="date">` o `<input type="color">`) sobre librerías de componentes externas para formularios e inputs.
+- Mantener los tipos de dominio en `src/types/index.ts` (incluyendo `PagoDTO`, `ValidacionQR`, `ContabilidadResumen` [spec 046]).
 - Librerías nuevas permitidas cuando resuelven algo que HTML/CSS/React puro no cubre bien (animación orquestada, gestos...). Cada dependencia nueva en `package.json` necesita una razón concreta, no se añaden "por si acaso": `framer-motion` (animaciones UI), `qrcode.react` (renderizado SVG de QR de acceso por reserva) y `jsqr` (decodificación de códigos QR desde imágenes/canvas en cliente [spec 045]).
-- Usar la instancia centralizada de cliente HTTP en `src/services/api.js`[cite: 3] sin duplicar instancias de `axios`/`fetch`.
-- No crear nuevos componentes en `src/components/ui`[cite: 3] si el caso de uso se resuelve con los existentes (`button`, `input`, `card`)[cite: 3].
+- Usar la instancia centralizada de cliente HTTP en `src/services/api.ts` sin duplicar instancias de `axios`/`fetch` (`reservasService`, `pistasService`, `usuariosService`, `perfilService`, `adminService`). Para descargas de archivos binarios/blob como CSV, `adminService.descargarCSV` usa `getMemoryAccessToken()` directamente.
+- No crear nuevos componentes en `src/components/ui` si el caso de uso se resuelve con los existentes (`button`, `input`, `card`).
 - Borrado sobre adición: eliminar código no utilizado antes de escribir nuevas abstracciones.
 
 ## Rutas y Navegación
@@ -175,6 +175,7 @@ Las rutas protegidas son:
 - `/reservas`
 - `/perfil`
 - `/admin/validar-qr` (`ValidarQRPage`: validación de código QR y entrada manual para administradores [spec 045])
+- `/admin/contabilidad` (`ContabilidadPage`: panel de KPIs contables y exportación CSV de transacciones para administradores [spec 046])
 
 `/pistas` es una ruta de acceso público para que cualquier visitante pueda consultar la disponibilidad e información de las instalaciones antes de registrarse o iniciar sesión.
 `ProtectedRoute` comprueba `isAuthenticated`. Si el usuario no está autenticado al intentar acceder a rutas protegidas, redirige a `/login`.

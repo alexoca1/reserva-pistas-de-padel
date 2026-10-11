@@ -19,6 +19,7 @@ import { InstalacionesPage } from "./pages/InstalacionesPage";
 import { PrivacidadPage } from "./pages/PrivacidadPage";
 import { TerminosPage } from "./pages/TerminosPage";
 import { ValidarQRPage } from "./pages/ValidarQRPage";
+import { ContabilidadPage } from "./pages/ContabilidadPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { DemoBanner } from "./components/DemoBanner";
 import { CookieBanner } from "./components/CookieBanner";
@@ -68,6 +69,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ValidarQRPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="admin/contabilidad"
+            element={
+              <ProtectedRoute>
+                <ContabilidadPage />
               </ProtectedRoute>
             }
           />

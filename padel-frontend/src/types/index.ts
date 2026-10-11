@@ -153,4 +153,13 @@ export interface ValidacionQR {
   costeEstimado?: number | null;
 }
 
+export interface ContabilidadResumen {
+  ingresosBrutos: number;
+  reembolsosEmitidos: number;
+  ingresosNetos: number;
+  reservasConfirmadas: number;
+  reservasCanceladas: number;
+  tasaCancelacion: number;
+}
+
 
